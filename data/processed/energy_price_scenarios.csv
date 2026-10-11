@@ -1,0 +1,4 @@
+scenario_id,scenario_label,import_price_aud_per_kwh,solar_export_credit_aud_per_kwh,price_source,is_observed_tariff,notes
+HYPOTHETICAL_LOW,Illustrative low flat tariff,0.18,0.03,hypothetical_example_not_Ausgrid_observation,False,Replace with a verified retailer tariff before economic interpretation.
+HYPOTHETICAL_BASE,Illustrative base flat tariff,0.3,0.08,hypothetical_example_not_Ausgrid_observation,False,Replace with a verified retailer tariff before economic interpretation.
+HYPOTHETICAL_HIGH,Illustrative high flat tariff,0.45,0.12,hypothetical_example_not_Ausgrid_observation,False,Replace with a verified retailer tariff before economic interpretation.

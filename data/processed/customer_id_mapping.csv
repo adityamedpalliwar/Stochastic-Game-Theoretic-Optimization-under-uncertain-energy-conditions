@@ -1,0 +1,4 @@
+house_id,source_customer_id,postcode,generator_capacity_kwp,selection_criteria
+H001,1,2076,3.78,"365 complete actual days for GC, CL, and GG"
+H002,3,2263,1.0,"365 complete actual days for GC, CL, and GG"
+H003,4,2220,1.0,"365 complete actual days for GC, CL, and GG"
