@@ -1,0 +1,33 @@
+# Configuration for Stochastic Game-Theoretic Optimization Prototype
+
+project:
+  name: "Stochastic Game-Theoretic Renewable Energy Management"
+  version: "0.1.0-prototype"
+  random_seed: 42
+
+paths:
+  hourly_data: "data/processed/three_house_hourly_lstm_ready.csv"
+  customer_mapping: "data/processed/customer_id_mapping.csv"
+  lstm_model: "data/processed/lstm_model.keras"
+  lstm_scaler: "data/processed/lstm_scaler.joblib"
+  lstm_sequences: "data/processed/lstm_sequences.npz"
+  test_predictions: "data/processed/test_predictions.csv"
+  evaluation_metrics: "data/processed/evaluation_metrics.csv"
+  price_scenarios: "data/processed/energy_price_scenarios.csv"
+
+forecasting:
+  lookback_hours: 24
+  feature_columns:
+    - "total_demand_kwh"
+    - "solar_generation_kwh"
+  clip_negative_outputs: true
+
+game_theory:
+  default_scenario_id: "HYPOTHETICAL_BASE"
+  seller_household_id: "H001"
+  buyer_household_id: "H002"
+  tolerance: 1e-6
+
+stochastic:
+  num_monte_carlo_scenarios: 1000
+  sampling_method: "empirical" # 'empirical' or 'gaussian'
