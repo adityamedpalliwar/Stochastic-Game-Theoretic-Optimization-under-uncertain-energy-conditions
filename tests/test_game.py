@@ -173,3 +173,20 @@ def test_full_game_run_produces_valid_comparison():
     if comp.is_nash_equilibrium:
         assert comp.saving_p1_aud >= -1e-9
         assert comp.saving_p2_aud >= -1e-9
+
+
+def test_detailed_best_responses():
+    """Verify detailed best response mapping and strict dominance indicators."""
+    from src.game.best_response import compute_detailed_best_responses
+
+    m = build_two_household_payoff_matrix(
+        seller_id="H001", seller_surplus_kwh=1.245,
+        buyer_id="H002",  buyer_deficit_kwh=1.463,
+        grid_import_price_aud=0.30, grid_export_credit_aud=0.08,
+    )
+    br_p1, br_p2 = compute_detailed_best_responses(m)
+
+    assert "OFFER_P2P" in br_p1["ACCEPT_P2P"].best_actions
+    assert br_p1["ACCEPT_P2P"].is_strictly_dominant_against_action is True
+    assert "ACCEPT_P2P" in br_p2["OFFER_P2P"].best_actions
+    assert br_p2["OFFER_P2P"].is_strictly_dominant_against_action is True
