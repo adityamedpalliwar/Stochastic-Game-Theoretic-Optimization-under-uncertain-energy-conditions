@@ -20,7 +20,7 @@ import pandas as pd
 
 from src.forecasting.lstm import LSTMWeights, predict_lstm_numpy
 from src.forecasting.predict import EnergyForecaster, ForecastResult
-from src.game.payoff_matrix import build_two_household_payoff_matrix
+from src.game.payoff_matrix import GamePayoffMatrix, build_two_household_payoff_matrix
 from src.game.utility import compute_household_payoff
 
 
@@ -254,6 +254,145 @@ class MonteCarloSimulator:
         )
 
 
+def build_stochastic_payoff_matrix(
+    dist_seller: ScenarioDistribution,
+    dist_buyer: ScenarioDistribution,
+    grid_import_price_aud: float = 0.30,
+    grid_export_credit_aud: float = 0.08,
+    p2p_price_aud: Optional[float] = None,
+) -> Tuple[GamePayoffMatrix, pd.DataFrame, Dict[str, Union[float, int]]]:
+    """Construct a GamePayoffMatrix and detailed accounting metrics for expected payoffs.
+
+    For every strategy profile a = (a1, a2), utilities and physical energy flows
+    are evaluated scenario-by-scenario across all realizations s:
+        S_1^{(s)} = max(0, G_1^{(s)} - D_1^{(s)})
+        L_2^{(s)} = max(0, D_2^{(s)} - G_2^{(s)})
+        Q_P2P^{(s)} = min(S_1^{(s)}, L_2^{(s)}) if (a1, a2) == ('OFFER_P2P', 'ACCEPT_P2P') else 0.0
+
+    Then:
+        E[U_i(a)] = (1/N) * sum_s U_i(a, omega_s)
+    """
+    if p2p_price_aud is None:
+        p2p_price = (grid_import_price_aud + grid_export_credit_aud) / 2.0
+    else:
+        p2p_price = float(p2p_price_aud)
+
+    actions_p1 = ["OFFER_P2P", "EXPORT_GRID"]
+    actions_p2 = ["ACCEPT_P2P", "GRID_IMPORT"]
+
+    n_scenarios = len(dist_seller.scenarios_demand_kwh)
+    if n_scenarios != len(dist_buyer.scenarios_demand_kwh):
+        raise ValueError(
+            f"Scenario count mismatch: seller has {n_scenarios}, buyer has {len(dist_buyer.scenarios_demand_kwh)}"
+        )
+
+    exp_u1 = np.zeros((2, 2), dtype=float)
+    exp_u2 = np.zeros((2, 2), dtype=float)
+    exp_q = np.zeros((2, 2), dtype=float)
+
+    # Physical surplus and deficit across scenarios
+    surplus_seller = np.maximum(
+        0.0, dist_seller.scenarios_solar_kwh - dist_seller.scenarios_demand_kwh
+    )
+    deficit_buyer = np.maximum(
+        0.0, dist_buyer.scenarios_demand_kwh - dist_buyer.scenarios_solar_kwh
+    )
+    trade_q_scenarios = np.minimum(surplus_seller, deficit_buyer)
+
+    rows = []
+
+    for i, a1 in enumerate(actions_p1):
+        for j, a2 in enumerate(actions_p2):
+            if a1 == "OFFER_P2P" and a2 == "ACCEPT_P2P":
+                q_s = trade_q_scenarios
+            else:
+                q_s = np.zeros(n_scenarios, dtype=float)
+
+            rem_surplus = surplus_seller - q_s
+            rem_deficit = deficit_buyer - q_s
+
+            # Cash flows per scenario
+            gross_p2p_revenue = q_s * p2p_price
+            gross_p2p_payment = q_s * p2p_price
+            seller_export_rev = rem_surplus * grid_export_credit_aud
+            buyer_import_cost = rem_deficit * grid_import_price_aud
+
+            total_seller_rev = gross_p2p_revenue + seller_export_rev
+            total_buyer_cost = gross_p2p_payment + buyer_import_cost
+
+            u1_s = total_seller_rev
+            u2_s = -total_buyer_cost
+            welfare_s = u1_s + u2_s
+
+            mean_u1 = float(np.mean(u1_s))
+            mean_u2 = float(np.mean(u2_s))
+            mean_q = float(np.mean(q_s))
+
+            exp_u1[i, j] = mean_u1
+            exp_u2[i, j] = mean_u2
+            exp_q[i, j] = mean_q
+
+            ddof_val = 1 if n_scenarios > 1 else 0
+            rows.append({
+                f"Action_{dist_seller.house_id}": a1,
+                f"Action_{dist_buyer.house_id}": a2,
+                "Expected_P2P_Traded_kWh": round(mean_q, 4),
+                "Expected_Residual_Surplus_kWh": round(float(np.mean(rem_surplus)), 4),
+                "Expected_Residual_Deficit_kWh": round(float(np.mean(rem_deficit)), 4),
+                "Expected_Gross_P2P_Payment_AUD": round(float(np.mean(gross_p2p_payment)), 4),
+                "Expected_Seller_Export_Revenue_AUD": round(float(np.mean(seller_export_rev)), 4),
+                "Expected_Buyer_Grid_Cost_AUD": round(float(np.mean(buyer_import_cost)), 4),
+                "Expected_Seller_Revenue_AUD": round(float(np.mean(total_seller_rev)), 4),
+                "Expected_Buyer_Cost_AUD": round(float(np.mean(total_buyer_cost)), 4),
+                f"Expected_Utility_{dist_seller.house_id}": round(mean_u1, 4),
+                f"Expected_Utility_{dist_buyer.house_id}": round(mean_u2, 4),
+                "Expected_Social_Welfare_AUD": round(float(np.mean(welfare_s)), 4),
+                "Expected_Community_Net_Cost_AUD": round(float(np.mean(total_buyer_cost - total_seller_rev)), 4),
+                "Std_Seller_Utility_AUD": round(float(np.std(u1_s, ddof=ddof_val)), 4),
+                "Std_Buyer_Utility_AUD": round(float(np.std(u2_s, ddof=ddof_val)), 4),
+                "Seller_Utility_Q05_AUD": round(float(np.percentile(u1_s, 5)), 4),
+                "Seller_Utility_Q95_AUD": round(float(np.percentile(u1_s, 95)), 4),
+                "Buyer_Utility_Q05_AUD": round(float(np.percentile(u2_s, 5)), 4),
+                "Buyer_Utility_Q95_AUD": round(float(np.percentile(u2_s, 95)), 4),
+                "Expected_Payoff_Pair": f"({mean_u1:.4f}, {mean_u2:.4f})",
+            })
+
+    matrix = GamePayoffMatrix(
+        player1_id=dist_seller.house_id,
+        player2_id=dist_buyer.house_id,
+        actions_p1=actions_p1,
+        actions_p2=actions_p2,
+        payoffs_p1=exp_u1,
+        payoffs_p2=exp_u2,
+        traded_quantities=exp_q,
+        p2p_price_aud=p2p_price,
+        grid_import_price_aud=grid_import_price_aud,
+        grid_export_credit_aud=grid_export_credit_aud,
+        details={},
+    )
+
+    tradeable_count = int(np.sum(trade_q_scenarios > 1e-6))
+    ddof_stats = 1 if n_scenarios > 1 else 0
+    scenario_stats: Dict[str, Union[float, int]] = {
+        "num_scenarios": n_scenarios,
+        "seller_surplus_mean_kwh": float(np.mean(surplus_seller)),
+        "seller_surplus_std_kwh": float(np.std(surplus_seller, ddof=ddof_stats)),
+        "buyer_deficit_mean_kwh": float(np.mean(deficit_buyer)),
+        "buyer_deficit_std_kwh": float(np.std(deficit_buyer, ddof=ddof_stats)),
+        "tradeable_scenarios_count": tradeable_count,
+        "tradeable_scenarios_pct": round((tradeable_count / n_scenarios) * 100.0, 2),
+        "mean_feasible_trade_kwh": float(np.mean(trade_q_scenarios)),
+        "max_feasible_trade_kwh": float(np.max(trade_q_scenarios)),
+        "seller_expected_gain_aud": float(exp_u1[0, 0] - exp_u1[1, 1]),
+        "buyer_expected_saving_aud": float(exp_u2[0, 0] - exp_u2[1, 1]),
+        "community_expected_saving_aud": float(
+            (exp_u1[0, 0] + exp_u2[0, 0]) - (exp_u1[1, 1] + exp_u2[1, 1])
+        ),
+    }
+
+    return matrix, pd.DataFrame(rows), scenario_stats
+
+
 def estimate_expected_payoff_matrix(
     dist_seller: ScenarioDistribution,
     dist_buyer: ScenarioDistribution,
@@ -266,53 +405,11 @@ def estimate_expected_payoff_matrix(
     DOES NOT average 1,000 independent Nash equilibria.
     Estimates E[U_i(a_1, a_2)] directly by evaluating payoff across realizations.
     """
-    if p2p_price_aud is None:
-        p2p_price = (grid_import_price_aud + grid_export_credit_aud) / 2.0
-    else:
-        p2p_price = float(p2p_price_aud)
-
-    actions_p1 = ["OFFER_P2P", "EXPORT_GRID"]
-    actions_p2 = ["ACCEPT_P2P", "GRID_IMPORT"]
-
-    n_scenarios = len(dist_seller.scenarios_demand_kwh)
-    exp_u1 = np.zeros((2, 2), dtype=float)
-    exp_u2 = np.zeros((2, 2), dtype=float)
-
-    # Compute surplus for seller across all scenarios
-    surplus_seller = np.maximum(0.0, dist_seller.scenarios_solar_kwh - dist_seller.scenarios_demand_kwh)
-    # Compute deficit for buyer across all scenarios
-    deficit_buyer = np.maximum(0.0, dist_buyer.scenarios_demand_kwh - dist_buyer.scenarios_solar_kwh)
-
-    # Feasible trade in each scenario
-    trade_q_scenarios = np.minimum(surplus_seller, deficit_buyer)
-
-    for i, a1 in enumerate(actions_p1):
-        for j, a2 in enumerate(actions_p2):
-            if a1 == "OFFER_P2P" and a2 == "ACCEPT_P2P":
-                q_s = trade_q_scenarios
-            else:
-                q_s = np.zeros(n_scenarios, dtype=float)
-
-            # Seller in scenario s
-            rem_surplus = surplus_seller - q_s
-            u1_s = rem_surplus * grid_export_credit_aud + q_s * p2p_price
-
-            # Buyer in scenario s
-            rem_deficit = deficit_buyer - q_s
-            u2_s = -(rem_deficit * grid_import_price_aud + q_s * p2p_price)
-
-            exp_u1[i, j] = float(np.mean(u1_s))
-            exp_u2[i, j] = float(np.mean(u2_s))
-
-    rows = []
-    for i, a1 in enumerate(actions_p1):
-        for j, a2 in enumerate(actions_p2):
-            rows.append({
-                f"Action_{dist_seller.house_id}": a1,
-                f"Action_{dist_buyer.house_id}": a2,
-                f"Expected_Utility_{dist_seller.house_id}": round(exp_u1[i, j], 4),
-                f"Expected_Utility_{dist_buyer.house_id}": round(exp_u2[i, j], 4),
-                "Expected_Payoff_Pair": f"({exp_u1[i, j]:.4f}, {exp_u2[i, j]:.4f})",
-            })
-
-    return pd.DataFrame(rows), exp_u1, exp_u2
+    matrix, df_summary, _ = build_stochastic_payoff_matrix(
+        dist_seller=dist_seller,
+        dist_buyer=dist_buyer,
+        grid_import_price_aud=grid_import_price_aud,
+        grid_export_credit_aud=grid_export_credit_aud,
+        p2p_price_aud=p2p_price_aud,
+    )
+    return df_summary, matrix.payoffs_p1, matrix.payoffs_p2

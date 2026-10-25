@@ -138,6 +138,7 @@ class EnergyForecaster:
             scaler_obj.data_max_, dtype=np.float32
         )
         self.scale_range_ = self.data_max_ - self.data_min_
+        self.feature_scaler = getattr(scaler_obj, "feature_scaler", None)
 
         if len(self.data_min_) != 2:
             raise ValueError(
@@ -229,19 +230,27 @@ class EnergyForecaster:
                 f"got {len(window_df)}."
             )
 
-        energy_raw = window_df[self.TARGET_COLUMNS].to_numpy(
-            dtype=np.float32
-        )
-        energy_scaled = self.scale(energy_raw)
+        if self.feature_scaler is not None:
+            raw_feats = window_df[self.FEATURE_COLUMNS].to_numpy(
+                dtype=np.float32
+            )
+            window_scaled = self.feature_scaler.transform(raw_feats).astype(
+                np.float32
+            )
+        else:
+            energy_raw = window_df[self.TARGET_COLUMNS].to_numpy(
+                dtype=np.float32
+            )
+            energy_scaled = self.scale(energy_raw)
 
-        time_features = self._time_features(
-            pd.DatetimeIndex(window_df.index)
-        )
+            time_features = self._time_features(
+                pd.DatetimeIndex(window_df.index)
+            )
 
-        window_scaled = np.column_stack([
-            energy_scaled,
-            time_features,
-        ]).astype(np.float32)
+            window_scaled = np.column_stack([
+                energy_scaled,
+                time_features,
+            ]).astype(np.float32)
 
         actual_row = house_df.iloc[idx_loc][
             self.TARGET_COLUMNS

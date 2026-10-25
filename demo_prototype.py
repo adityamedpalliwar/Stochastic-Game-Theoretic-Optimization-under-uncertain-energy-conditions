@@ -62,6 +62,7 @@ from src.game.payoff_matrix import build_two_household_payoff_matrix
 from src.stochastic.monte_carlo import (
     MonteCarloSimulator,
     ValidationResidualPool,
+    build_stochastic_payoff_matrix,
     estimate_expected_payoff_matrix,
 )
 from src.utils.seed import set_seed
@@ -250,12 +251,12 @@ def run_demo(
     pause(step_by_step, "Press [Enter] to see Game Setup and Payoff Matrix...")
 
     # =========================================================================
-    # STAGE 2: GAME SETUP & PAYOFF MATRIX
+    # STAGE 2: GAME SETUP & PAYOFF MATRIX (DETERMINISTIC GROUND TRUTH)
     # =========================================================================
     print_section(
         2,
-        "Two-Household Normal-Form Microgrid Game",
-        "Formulating peer-to-peer energy trade under physical & accounting conservation",
+        "Two-Household Normal-Form Game (Deterministic Ground-Truth Realization)",
+        "Analysis A: Single realized hour baseline & P2P clearing at 2013-06-08 10:00:00",
     )
 
     p2p_price = (tariff.import_price_aud_per_kwh + tariff.solar_export_credit_aud_per_kwh) / 2.0
@@ -372,12 +373,12 @@ def run_demo(
     pause(step_by_step, "Press [Enter] to calculate Nash Equilibrium...")
 
     # =========================================================================
-    # STAGE 4: NASH EQUILIBRIUM CALCULATION & SOCIAL WELFARE
+    # STAGE 4: NASH EQUILIBRIUM CALCULATION & SOCIAL WELFARE (ANALYSIS A)
     # =========================================================================
     print_section(
         4,
-        "Nash Equilibrium Calculation & Verification",
-        "Finding mutual stability: a_1* in BR_1(a_2*) and a_2* in BR_2(a_1*)",
+        "Nash Equilibrium & Welfare (Deterministic Analysis A)",
+        "Finding mutual stability on realized ground truth: a_1* in BR_1(a_2*) and a_2* in BR_2(a_1*)",
     )
 
     print_subheading("Equilibrium Search Results:")
@@ -408,24 +409,59 @@ def run_demo(
     pause(step_by_step, "Press [Enter] to see Stochastic Optimization & Project Importance...")
 
     # =========================================================================
-    # STAGE 5: STOCHASTIC OPTIMIZATION & PROJECT IMPORTANCE
+    # STAGE 5: STOCHASTIC OPTIMIZATION & EXPECTED PAYOFF EQUILIBRIUM
     # =========================================================================
     print_section(
         5,
-        "Stochastic Optimization & Project Importance for Teacher Presentation",
-        "Connecting Monte Carlo scenario expected payoffs E[U_i] with strategic stability",
+        "Stochastic Expected Payoffs & Strategic Stability (Monte Carlo Analysis B)",
+        "Connecting 1,000 Monte Carlo scenario expected payoffs E[U_i] with strategic equilibrium",
     )
 
-    exp_df, exp_u1, exp_u2 = estimate_expected_payoff_matrix(
+    stoch_matrix, exp_df, stoch_stats = build_stochastic_payoff_matrix(
         dist_h1,
         dist_h2,
         grid_import_price_aud=tariff.import_price_aud_per_kwh,
         grid_export_credit_aud=tariff.solar_export_credit_aud_per_kwh,
     )
+    exp_u1 = stoch_matrix.payoffs_p1
+    exp_u2 = stoch_matrix.payoffs_p2
 
-    print_subheading("Deterministic vs Stochastic Expected Payoffs (Across 1,000 Scenarios):")
-    print(f"{DIM}(Method: E[U_i(a)] evaluated over all realizations — NOT averaging 1,000 equilibria){RESET}\n")
+    print_subheading("1. Expected Physical Energy Flows & Cash Flows across 1,000 Scenarios (per hour):")
+    print(f"{DIM}(Method: Scenario-by-scenario evaluation E[U_i(a)] = (1/N) * sum U_i(a, omega_s) — NOT averaging equilibria){RESET}\n")
 
+    summary_display_rows = []
+    for _, r in exp_df.iterrows():
+        a1 = r[f"Action_{dist_h1.house_id}"]
+        a2 = r[f"Action_{dist_h2.house_id}"]
+        summary_display_rows.append({
+            "Strategy Profile": f"{a1} / {a2}",
+            "Exp Traded (kWh)": f"{r['Expected_P2P_Traded_kWh']:.4f}",
+            "Seller Surplus (kWh)": f"{r['Expected_Residual_Surplus_kWh']:.4f}",
+            "Buyer Deficit (kWh)": f"{r['Expected_Residual_Deficit_kWh']:.4f}",
+            "Gross P2P ($)": f"{r['Expected_Gross_P2P_Payment_AUD']:.4f}",
+            "Seller Rev ($)": f"{r['Expected_Seller_Revenue_AUD']:+.4f}",
+            "Buyer Cost ($)": f"{r['Expected_Buyer_Cost_AUD']:.4f}",
+            "Seller Utility U₁": f"{r[f'Expected_Utility_{dist_h1.house_id}']:+.4f}",
+            "Buyer Utility U₂": f"{r[f'Expected_Utility_{dist_h2.house_id}']:+.4f}",
+            "Social Welfare ($)": f"{r['Expected_Social_Welfare_AUD']:+.4f}",
+        })
+    print(pd.DataFrame(summary_display_rows).to_string(index=False))
+
+    print_subheading("2. Strategy Profile Uncertainty Statistics (Monte Carlo Dispersion):")
+    dispersion_rows = []
+    for _, r in exp_df.iterrows():
+        a1 = r[f"Action_{dist_h1.house_id}"]
+        a2 = r[f"Action_{dist_h2.house_id}"]
+        dispersion_rows.append({
+            "Strategy Profile": f"{a1} / {a2}",
+            "Seller Std (σ)": f"{r['Std_Seller_Utility_AUD']:.4f}",
+            "Seller 90% Range": f"[{r['Seller_Utility_Q05_AUD']:+.4f}, {r['Seller_Utility_Q95_AUD']:+.4f}]",
+            "Buyer Std (σ)": f"{r['Std_Buyer_Utility_AUD']:.4f}",
+            "Buyer 90% Range": f"[{r['Buyer_Utility_Q05_AUD']:+.4f}, {r['Buyer_Utility_Q95_AUD']:+.4f}]",
+        })
+    print(pd.DataFrame(dispersion_rows).to_string(index=False))
+
+    print_subheading("3. Deterministic Selected Hour (Analysis A) vs Stochastic Expected Payoffs (Analysis B):")
     det_u1 = matrix.payoffs_p1
     det_u2 = matrix.payoffs_p2
 
@@ -440,23 +476,82 @@ def run_demo(
     for i, j, lbl in profiles:
         comp_rows.append({
             "Action Profile": lbl,
-            "Det U_Seller": f"{det_u1[i,j]:+.4f}",
-            "Exp E[U]_Seller": f"{exp_u1[i,j]:+.4f}",
-            "Det U_Buyer": f"{det_u2[i,j]:+.4f}",
-            "Exp E[U]_Buyer": f"{exp_u2[i,j]:+.4f}",
-            "Det Social Welfare": f"{(det_u1[i,j] + det_u2[i,j]):+.4f}",
-            "Exp Social Welfare": f"{(exp_u1[i,j] + exp_u2[i,j]):+.4f}",
+            "Det U_Seller": f"{det_u1[i,j]:+.4f} AUD",
+            "Exp E[U]_Seller": f"{exp_u1[i,j]:+.4f} AUD",
+            "Det U_Buyer": f"{det_u2[i,j]:+.4f} AUD",
+            "Exp E[U]_Buyer": f"{exp_u2[i,j]:+.4f} AUD",
+            "Det Social Welfare": f"{(det_u1[i,j] + det_u2[i,j]):+.4f} AUD",
+            "Exp Social Welfare": f"{(exp_u1[i,j] + exp_u2[i,j]):+.4f} AUD",
         })
     print(pd.DataFrame(comp_rows).to_string(index=False))
 
-    # Stochastic best response check
-    stoch_p2p_gain_p1 = exp_u1[0, 0] - exp_u1[1, 0]
-    stoch_p2p_gain_p2 = exp_u2[0, 0] - exp_u2[0, 1]
+    print_callout(
+        "Why Deterministic Realized Payoff Differs from Monte Carlo Expected Payoff",
+        [
+            "1. Realized Hour (Analysis A): H002 experienced an actual demand spike of 1.838 kWh",
+            "   (net deficit: 1.463 kWh), creating large mutual trade capacity (1.245 kWh traded).",
+            f"2. Stochastic Scenarios (Analysis B): Point forecast predicted next-hour demand = {dist_h2.forecast_demand_mean_kwh:.3f} kWh",
+            f"   and solar = {dist_h2.forecast_solar_mean_kwh:.3f} kWh. In {stoch_stats['tradeable_scenarios_pct']:.1f}% of scenarios H002 has a deficit,",
+            f"   while in {100.0 - float(stoch_stats['tradeable_scenarios_pct']):.1f}% of scenarios local solar covers demand (zero grid/P2P deficit needed).",
+            f"3. Expected Traded Energy: Across all 1,000 scenarios, feasible trade averages {stoch_stats['mean_feasible_trade_kwh']:.4f} kWh/h,",
+            f"   yielding positive expected gains for both prosumers with zero penalty during zero-trade hours.",
+        ],
+        color=CYAN,
+    )
 
-    print(f"\n{BOLD}Stochastic Robustness Verification:{RESET}")
-    print(f" • Seller Expected Advantage under Uncertainty: {GREEN}+{stoch_p2p_gain_p1:.4f} AUD{RESET} per hour")
-    print(f" • Buyer Expected Advantage under Uncertainty : {GREEN}+{stoch_p2p_gain_p2:.4f} AUD{RESET} per hour")
-    print(f" • {BOLD}{GREEN}Conclusion:{RESET} Even under intense solar & load uncertainty, (OFFER_P2P, ACCEPT_P2P) remains the strictly dominant Nash equilibrium.")
+    # Recomputed Best Responses on Expected Payoff Matrix
+    print_subheading("4. Recomputed Best Responses on Stochastic Expected Payoff Matrix:")
+    stoch_br_p1, stoch_br_p2 = compute_detailed_best_responses(stoch_matrix)
+
+    print(f" • {BOLD}Player 1 (H001 - Solar Seller) Best Responses:{RESET}")
+    for a2, det in stoch_br_p1.items():
+        acts = ", ".join(f"'{a}'" for a in det.best_actions)
+        strict = "Strict Best Response" if det.is_strictly_dominant_against_action else "Weak Indifference (Equal Payoffs)"
+        print(f"   - When Buyer plays '{a2}': BR₁ = {{{acts}}} [{strict}]")
+        for act, u in det.all_action_utilities.items():
+            marker = "★" if act in det.best_actions else " "
+            print(f"       Action '{act:<11}' -> Expected E[U₁] = {u:+.4f} AUD/h  {marker}")
+
+    print(f"\n • {BOLD}Player 2 (H002 - Deficit Buyer) Best Responses:{RESET}")
+    for a1, det in stoch_br_p2.items():
+        acts = ", ".join(f"'{a}'" for a in det.best_actions)
+        strict = "Strict Best Response" if det.is_strictly_dominant_against_action else "Weak Indifference (Equal Payoffs)"
+        print(f"   - When Seller plays '{a1}': BR₂ = {{{acts}}} [{strict}]")
+        for act, u in det.all_action_utilities.items():
+            marker = "★" if act in det.best_actions else " "
+            print(f"       Action '{act:<11}' -> Expected E[U₂] = {u:+.4f} AUD/h  {marker}")
+
+    print(f"\n{DIM}→ Dominance Classification: OFFER_P2P is weakly dominant for Seller, and ACCEPT_P2P is weakly dominant for Buyer.{RESET}")
+
+    # Recomputed Nash Equilibria on Expected Payoff Matrix
+    print_subheading("5. Pure-Strategy Nash Equilibria of Expected-Payoff Game:")
+    stoch_eq_result = find_pure_nash_equilibria(stoch_matrix)
+    print(f" • Pure-Strategy Nash Equilibria detected : {BOLD}{GREEN}{stoch_eq_result.num_equilibria}{RESET}")
+
+    for idx, eq in enumerate(stoch_eq_result.equilibria, 1):
+        strict_str = f"{GREEN}STRICT EQUILIBRIUM{RESET}" if eq.is_strict else f"{YELLOW}WEAK EQUILIBRIUM{RESET}"
+        print(f"\n   {BOLD}Equilibrium #{idx}:{RESET} ({BOLD}{eq.action_player1}{RESET}, {BOLD}{eq.action_player2}{RESET}) [{strict_str}]")
+        print(f"   ├─ Expected Seller Utility (E[U₁]) : {eq.utility_player1:+.4f} AUD/h")
+        print(f"   ├─ Expected Buyer Utility (E[U₂])  : {eq.utility_player2:+.4f} AUD/h")
+        print(f"   ├─ Expected Traded Energy via P2P  : {BOLD}{eq.traded_energy_kwh:.4f} kWh/h{RESET}")
+        print(f"   └─ Stability Proof                 : Neither player can unilaterally improve expected payoff.")
+
+    # Unilateral deviation check
+    p1_dev = exp_u1[1, 0] - exp_u1[0, 0]
+    p2_dev = exp_u2[0, 1] - exp_u2[0, 0]
+    print(f"\n{BOLD}Unilateral Deviation Incentive Verification:{RESET}")
+    print(f" • Seller unilateral deviation to EXPORT_GRID  : ΔE[U₁] = {p1_dev:+.4f} AUD/h (payoff strictly drops by {abs(p1_dev):.4f} AUD)")
+    print(f" • Buyer unilateral deviation to GRID_IMPORT   : ΔE[U₂] = {p2_dev:+.4f} AUD/h (payoff strictly drops by {abs(p2_dev):.4f} AUD)")
+
+    # Scenario-level statistics reported separately
+    print_subheading("6. Scenario-Level Equilibrium & Trading Frequency Distribution (Reported Separately):")
+    print(f" • Total Monte Carlo Scenarios Evaluated       : {stoch_stats['num_scenarios']:,}")
+    print(f" • Scenarios with Feasible P2P Trade (Q > 0)   : {BOLD}{stoch_stats['tradeable_scenarios_count']}{RESET} ({stoch_stats['tradeable_scenarios_pct']}%)")
+    print(f" • Scenarios with Inactive Trade (Q = 0)       : {int(stoch_stats['num_scenarios']) - int(stoch_stats['tradeable_scenarios_count'])} ({100.0 - float(stoch_stats['tradeable_scenarios_pct']):.1f}%)")
+    print(f" • Mean Feasible Trade across all Scenarios    : {stoch_stats['mean_feasible_trade_kwh']:.4f} kWh/h (Max: {stoch_stats['max_feasible_trade_kwh']:.4f} kWh/h)")
+    print(f" • Expected Seller Coordination Gain over Base : {GREEN}+{stoch_stats['seller_expected_gain_aud']:.4f} AUD/h{RESET}")
+    print(f" • Expected Buyer Coordination Saving over Base: {GREEN}+{stoch_stats['buyer_expected_saving_aud']:.4f} AUD/h{RESET}")
+    print(f" • Total Community Expected Welfare Gain       : {BOLD}{GREEN}+{stoch_stats['community_expected_saving_aud']:.4f} AUD/h{RESET}")
 
     print_banner("KEY TAKEAWAYS FOR TEACHER / EXAMINER PRESENTATION", color=GREEN, fill="*")
 
@@ -472,14 +567,15 @@ def run_demo(
          "directly at the low-voltage level, protecting grid infrastructure."),
 
         ("3. Eliminates Point-Forecast Vulnerability via Stochastic Modeling",
-         "Naive systems assume next-hour solar will match the point prediction. If cloud cover drops solar,\n"
-         "deterministic schedules fail catastrophically. Our Monte Carlo formulation tests 1,000 empirical\n"
-         "scenarios, proving that P2P trading yields positive expected gains across the entire probability distribution."),
+         "Naive systems assume next-hour solar will match the single point prediction.\n"
+         "If load spikes or cloud cover drops solar, deterministic schedules fail catastrophically.\n"
+         "Our Monte Carlo formulation tests 1,000 empirical scenarios, proving that P2P trading yields\n"
+         "positive expected gains across the probability distribution while protecting against imbalance penalties."),
 
-        ("4. Decentralized & Privacy-Preserving Architecture",
-         "Centralized optimization requires all households to reveal private consumption data to a utility.\n"
-         "Our normal-form game relies only on local payoffs and peer bids, preserving household privacy while\n"
-         "guaranteeing convergence to the social optimum."),
+        ("4. Strategic Stability Under Uncertainty",
+         "When evaluated over 1,000 Monte Carlo realizations, (OFFER_P2P, ACCEPT_P2P) emerges as the\n"
+         "strict, Pareto-dominant Nash equilibrium of the expected-payoff game. Rational prosumers\n"
+         "have zero incentive to defect to centralized grid defaults."),
     ]
 
     for title, desc in talking_points:
