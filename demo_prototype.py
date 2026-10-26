@@ -17,7 +17,7 @@ import argparse
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 # Ensure Windows terminal uses UTF-8 encoding
 if hasattr(sys.stdout, "reconfigure"):
@@ -66,6 +66,59 @@ from src.stochastic.monte_carlo import (
     estimate_expected_payoff_matrix,
 )
 from src.utils.seed import set_seed
+
+
+def format_clean_table(
+    headers: List[str],
+    rows: List[List[Any]],
+    alignments: Optional[List[str]] = None,
+    col_spacing: int = 1,
+) -> str:
+    """Format tabular data into a compact, perfectly aligned monospace table.
+
+    Guarantees column alignment without wrapping in standard 80-column terminals.
+    """
+    if not rows:
+        return ""
+    num_cols = len(headers)
+    if alignments is None:
+        alignments = ["left"] + ["right"] * (num_cols - 1)
+
+    widths = [len(str(h)) for h in headers]
+    for r in rows:
+        for i, val in enumerate(r):
+            if i < num_cols:
+                widths[i] = max(widths[i], len(str(val)))
+
+    header_parts = []
+    for i, (h, w) in enumerate(zip(headers, widths)):
+        align = alignments[i] if i < len(alignments) else "right"
+        if align == "left":
+            header_parts.append(f"{h:<{w}}")
+        elif align == "right":
+            header_parts.append(f"{h:>{w}}")
+        else:
+            header_parts.append(f"{h:^{w}}")
+
+    sp = " " * col_spacing
+    header_str = sp.join(header_parts)
+    divider = "─" * len(header_str)
+
+    out_lines = [header_str, divider]
+    for r in rows:
+        row_parts = []
+        for i, (val, w) in enumerate(zip(r, widths)):
+            sval = str(val)
+            align = alignments[i] if i < len(alignments) else "right"
+            if align == "left":
+                row_parts.append(f"{sval:<{w}}")
+            elif align == "right":
+                row_parts.append(f"{sval:>{w}}")
+            else:
+                row_parts.append(f"{sval:^{w}}")
+        out_lines.append(sp.join(row_parts))
+
+    return "\n".join(out_lines)
 
 
 def print_banner(text: str, color: str = CYAN, fill: str = "=") -> None:
@@ -171,45 +224,14 @@ def run_demo(
     d_stat_h2, s_stat_h2 = residual_pool.get_statistics("H002")
 
     print_subheading("Historical Residual Distributions (2,103 Validation Hours):")
-    res_df = pd.DataFrame([
-        {
-            "Household": "H001 (Seller)",
-            "Variable": "Demand (kWh)",
-            "Mean Bias": f"{d_stat_h1.mean:+.4f}",
-            "Std Dev (σ)": f"{d_stat_h1.std_dev:.4f}",
-            "Q05": f"{d_stat_h1.q05:.3f}",
-            "Median": f"{d_stat_h1.median:.3f}",
-            "Q95": f"{d_stat_h1.q95:.3f}",
-        },
-        {
-            "Household": "H001 (Seller)",
-            "Variable": "Solar (kWh)",
-            "Mean Bias": f"{s_stat_h1.mean:+.4f}",
-            "Std Dev (σ)": f"{s_stat_h1.std_dev:.4f}",
-            "Q05": f"{s_stat_h1.q05:.3f}",
-            "Median": f"{s_stat_h1.median:.3f}",
-            "Q95": f"{s_stat_h1.q95:.3f}",
-        },
-        {
-            "Household": "H002 (Buyer)",
-            "Variable": "Demand (kWh)",
-            "Mean Bias": f"{d_stat_h2.mean:+.4f}",
-            "Std Dev (σ)": f"{d_stat_h2.std_dev:.4f}",
-            "Q05": f"{d_stat_h2.q05:.3f}",
-            "Median": f"{d_stat_h2.median:.3f}",
-            "Q95": f"{d_stat_h2.q95:.3f}",
-        },
-        {
-            "Household": "H002 (Buyer)",
-            "Variable": "Solar (kWh)",
-            "Mean Bias": f"{s_stat_h2.mean:+.4f}",
-            "Std Dev (σ)": f"{s_stat_h2.std_dev:.4f}",
-            "Q05": f"{s_stat_h2.q05:.3f}",
-            "Median": f"{s_stat_h2.median:.3f}",
-            "Q95": f"{s_stat_h2.q95:.3f}",
-        },
-    ])
-    print(res_df.to_string(index=False))
+    res_headers = ["Household", "Variable", "Mean Bias", "Std Dev (σ)", "Q05", "Median", "Q95"]
+    res_rows = [
+        ["H001 (Seller)", "Demand (kWh)", f"{d_stat_h1.mean:+.4f}", f"{d_stat_h1.std_dev:.4f}", f"{d_stat_h1.q05:.3f}", f"{d_stat_h1.median:.3f}", f"{d_stat_h1.q95:.3f}"],
+        ["H001 (Seller)", "Solar (kWh)",  f"{s_stat_h1.mean:+.4f}", f"{s_stat_h1.std_dev:.4f}", f"{s_stat_h1.q05:.3f}", f"{s_stat_h1.median:.3f}", f"{s_stat_h1.q95:.3f}"],
+        ["H002 (Buyer)",  "Demand (kWh)", f"{d_stat_h2.mean:+.4f}", f"{d_stat_h2.std_dev:.4f}", f"{d_stat_h2.q05:.3f}", f"{d_stat_h2.median:.3f}", f"{d_stat_h2.q95:.3f}"],
+        ["H002 (Buyer)",  "Solar (kWh)",  f"{s_stat_h2.mean:+.4f}", f"{s_stat_h2.std_dev:.4f}", f"{s_stat_h2.q05:.3f}", f"{s_stat_h2.median:.3f}", f"{s_stat_h2.q95:.3f}"],
+    ]
+    print(format_clean_table(res_headers, res_rows, ["left", "left", "right", "right", "right", "right", "right"]))
 
     mc_sim = MonteCarloSimulator(residual_pool=residual_pool)
     dist_h1 = mc_sim.generate_scenarios(pred_h1, num_scenarios=num_scenarios, random_seed=seed)
@@ -219,22 +241,24 @@ def run_demo(
     print(f" • Preserves coupled joint distribution between demand & solar via paired resampling.")
     print(f" • Physical Non-negativity Constraints strictly enforced: Demand ≥ 0, Solar ≥ 0.")
 
+    summary_headers = ["Household", "Variable", "LSTM Pred", "MC Mean", "MC Std", "90% Interval", "Actual", "In 90%?"]
     summary_rows = []
     for dist, hname in [(dist_h1, "H001 (Seller)"), (dist_h2, "H002 (Buyer)")]:
         df_sub = dist.get_summary_dataframe()
         for _, r in df_sub.iterrows():
-            summary_rows.append({
-                "Household": hname,
-                "Variable": r["Variable"],
-                "LSTM Point Pred": f"{r['Forecast_Mean']:.3f} kWh",
-                "Scenario Mean": f"{r['Scenario_Mean']:.3f} kWh",
-                "Scenario Std": f"{r['Scenario_Std']:.3f} kWh",
-                "90% Prediction Interval": f"[{r['Q05']:.3f}, {r['Q95']:.3f}]",
-                "Actual Ground Truth": f"{r['Actual']:.3f} kWh",
-                "Covered in 90% PI": "✔ YES" if r["In_90pct_PI"] else "✘ NO",
-            })
+            summary_rows.append([
+                hname,
+                r["Variable"].replace(" (kWh)", ""),
+                f"{r['Forecast_Mean']:.3f}",
+                f"{r['Scenario_Mean']:.3f}",
+                f"{r['Scenario_Std']:.3f}",
+                f"[{r['Q05']:.3f}, {r['Q95']:.3f}]",
+                f"{r['Actual']:.3f}",
+                "✔ YES" if r["In_90pct_PI"] else "✘ NO",
+            ])
     print()
-    print(pd.DataFrame(summary_rows).to_string(index=False))
+    print(format_clean_table(summary_headers, summary_rows, ["left", "left", "right", "right", "right", "center", "right", "center"]))
+    print(f"{DIM}Note: All energy readings in kWh. 90% Interval spans empirical [5th, 95th] percentiles.{RESET}")
 
     print_callout(
         "Why Monte Carlo is essential to explain to your teacher",
@@ -286,32 +310,44 @@ def run_demo(
     )
 
     print_subheading("Normal-Form 2×2 Payoff Matrix [Utility U_i = -(Net Expenditure) in AUD]:")
-    print(f"{DIM}(Positive utility indicates net profit / export earnings; negative utility indicates net electricity cost){RESET}\n")
+    print(f"{DIM}(Positive utility indicates net profit; negative utility indicates net electricity cost){RESET}\n")
 
     m1 = matrix.payoffs_p1
     m2 = matrix.payoffs_p2
 
-    header = f"{'':<20} │ {'ACCEPT_P2P (Buyer)':<30} │ {'GRID_IMPORT (Buyer)':<30}"
-    divider = f"{'─'*20}┼{'─'*32}┼{'─'*32}"
-    row1 = f"{'OFFER_P2P (Seller)':<20} │ (U₁={m1[0,0]:+.4f}, U₂={m2[0,0]:+.4f}) [P2P Trade] │ (U₁={m1[0,1]:+.4f}, U₂={m2[0,1]:+.4f}) [Trade Fails]"
-    row2 = f"{'EXPORT_GRID (Seller)':<20} │ (U₁={m1[1,0]:+.4f}, U₂={m2[1,0]:+.4f}) [Trade Fails] │ (U₁={m1[1,1]:+.4f}, U₂={m2[1,1]:+.4f}) [Baseline]"
+    c1 = 14
+    c2 = 29
+    c3 = 29
+
+    cell_00 = f"(U₁={m1[0,0]:+.4f}, U₂={m2[0,0]:+.4f}) [P2P]"
+    cell_01 = f"(U₁={m1[0,1]:+.4f}, U₂={m2[0,1]:+.4f}) [Fail]"
+    cell_10 = f"(U₁={m1[1,0]:+.4f}, U₂={m2[1,0]:+.4f}) [Fail]"
+    cell_11 = f"(U₁={m1[1,1]:+.4f}, U₂={m2[1,1]:+.4f}) [Base]"
+
+    header = f" {'Seller \\ Buyer':<{c1}} │ {'ACCEPT_P2P (Buyer)':^{c2}} │ {'GRID_IMPORT (Buyer)':^{c3}}"
+    divider = f"─{'─'*c1}┼{'─'*(c2+2)}┼{'─'*(c3+1)}"
+    row1 = f" {'OFFER_P2P':<{c1}} │ {cell_00:^{c2}} │ {cell_01:^{c3}}"
+    row2 = f" {'EXPORT_GRID':<{c1}} │ {cell_10:^{c2}} │ {cell_11:^{c3}}"
 
     print(f"{BOLD}{header}{RESET}")
     print(divider)
     print(f"{GREEN}{row1}{RESET}")
     print(divider)
     print(f"{row2}")
-    print()
+    print(divider)
+    print(f"{DIM}Legend: [P2P]=Mutual P2P Trade | [Fail]=Trade Fails (Grid Default) | [Base]=Baseline{RESET}\n")
 
     print_subheading("Exhaustive Strategy Profiles & Cash Flows:")
-    df_profiles = matrix.to_dataframe()
-    df_profiles["Outcome Description"] = [
-        "Mutual agreement: 1.245 kWh traded locally at $0.190/kWh",
-        "Seller offered, Buyer rejected: Unilateral grid default",
-        "Seller exported, Buyer accepted: Unilateral grid default",
-        "Uncoordinated status-quo: Both interact only with grid",
+    strat_headers = ["Seller A₁", "Buyer A₂", "Traded", "U₁ Seller", "U₂ Buyer", "Market Outcome"]
+    tq = matrix.traded_quantities
+    strat_rows = [
+        ["OFFER_P2P",   "ACCEPT_P2P",  f"{tq[0, 0]:.3f} kWh", f"{m1[0, 0]:+.4f}", f"{m2[0, 0]:+.4f}", "P2P Trade Cleared"],
+        ["OFFER_P2P",   "GRID_IMPORT", f"{tq[0, 1]:.3f} kWh", f"{m1[0, 1]:+.4f}", f"{m2[0, 1]:+.4f}", "Buyer Rejected (Grid)"],
+        ["EXPORT_GRID", "ACCEPT_P2P",  f"{tq[1, 0]:.3f} kWh", f"{m1[1, 0]:+.4f}", f"{m2[1, 0]:+.4f}", "Seller Exported (Grid)"],
+        ["EXPORT_GRID", "GRID_IMPORT", f"{tq[1, 1]:.3f} kWh", f"{m1[1, 1]:+.4f}", f"{m2[1, 1]:+.4f}", "Status-Quo Baseline"],
     ]
-    print(df_profiles.to_string(index=False))
+    print(format_clean_table(strat_headers, strat_rows, ["left", "left", "right", "right", "right", "left"]))
+    print(f"{DIM}Note: Utilities in AUD: U₁ = Seller net profit, U₂ = -Buyer electricity expenditure.{RESET}")
 
     pause(step_by_step, "Press [Enter] to see Best Response Dynamics...")
 
@@ -393,7 +429,14 @@ def run_demo(
         print(f"   └─ Stability Proof      : Neither household can unilaterally improve payoff by deviating.")
 
     print_subheading("Financial Impact: Baseline vs Coordinated Game Equilibrium:")
-    print(comp.to_dataframe().to_string(index=False))
+    fin_headers = ["Participant", "Energy Status", "Base Cost", "Game Cost", "Savings", "Action"]
+    fin_rows = [
+        ["H001 (Seller)", f"+{b1_actual.surplus_kwh:.3f} kWh Surplus", f"{comp.baseline_cost_p1_aud:+.4f}", f"{comp.game_cost_p1_aud:+.4f}", f"+{comp.saving_p1_aud:.4f}", "OFFER_P2P"],
+        ["H002 (Buyer)",  f"-{b2_actual.deficit_kwh:.3f} kWh Deficit", f"{comp.baseline_cost_p2_aud:+.4f}", f"{comp.game_cost_p2_aud:+.4f}", f"+{comp.saving_p2_aud:.4f}", "ACCEPT_P2P"],
+        ["Community Net", f"{eq_result.equilibria[0].traded_energy_kwh:.3f} kWh Traded", f"{comp.baseline_total_cost_aud:+.4f}", f"{comp.game_total_cost_aud:+.4f}", f"+{comp.total_community_savings_aud:.4f}", "COORDINATED"],
+    ]
+    print(format_clean_table(fin_headers, fin_rows, ["left", "left", "right", "right", "right", "left"]))
+    print(f"{DIM}Note: Values in AUD. Negative cost denotes net revenue; positive cost denotes expense.{RESET}")
 
     comm_savings = comp.total_community_savings_aud
     base_cost = comp.baseline_total_cost_aud
@@ -426,64 +469,89 @@ def run_demo(
     exp_u1 = stoch_matrix.payoffs_p1
     exp_u2 = stoch_matrix.payoffs_p2
 
-    print_subheading("1. Expected Physical Energy Flows & Cash Flows across 1,000 Scenarios (per hour):")
+    print_subheading("1. Expected Energy Balances & Cash Flows across 1,000 Scenarios (per hour):")
     print(f"{DIM}(Method: Scenario-by-scenario evaluation E[U_i(a)] = (1/N) * sum U_i(a, omega_s) — NOT averaging equilibria){RESET}\n")
 
-    summary_display_rows = []
+    # Table 1A: Physical Energy Balances
+    headers_5a = ["Strategy Profile", "Traded kWh", "Surplus Rem", "Deficit Rem", "Trade Outcome"]
+    rows_5a = []
+    outcomes_map = {
+        ("OFFER_P2P", "ACCEPT_P2P"): "P2P Traded",
+        ("OFFER_P2P", "GRID_IMPORT"): "Buyer Rejects",
+        ("EXPORT_GRID", "ACCEPT_P2P"): "No P2P Offer",
+        ("EXPORT_GRID", "GRID_IMPORT"): "Status-Quo",
+    }
     for _, r in exp_df.iterrows():
         a1 = r[f"Action_{dist_h1.house_id}"]
         a2 = r[f"Action_{dist_h2.house_id}"]
-        summary_display_rows.append({
-            "Strategy Profile": f"{a1} / {a2}",
-            "Exp Traded (kWh)": f"{r['Expected_P2P_Traded_kWh']:.4f}",
-            "Seller Surplus (kWh)": f"{r['Expected_Residual_Surplus_kWh']:.4f}",
-            "Buyer Deficit (kWh)": f"{r['Expected_Residual_Deficit_kWh']:.4f}",
-            "Gross P2P ($)": f"{r['Expected_Gross_P2P_Payment_AUD']:.4f}",
-            "Seller Rev ($)": f"{r['Expected_Seller_Revenue_AUD']:+.4f}",
-            "Buyer Cost ($)": f"{r['Expected_Buyer_Cost_AUD']:.4f}",
-            "Seller Utility U₁": f"{r[f'Expected_Utility_{dist_h1.house_id}']:+.4f}",
-            "Buyer Utility U₂": f"{r[f'Expected_Utility_{dist_h2.house_id}']:+.4f}",
-            "Social Welfare ($)": f"{r['Expected_Social_Welfare_AUD']:+.4f}",
-        })
-    print(pd.DataFrame(summary_display_rows).to_string(index=False))
+        rows_5a.append([
+            f"{a1} / {a2}",
+            f"{r['Expected_P2P_Traded_kWh']:.4f}",
+            f"{r['Expected_Residual_Surplus_kWh']:.4f}",
+            f"{r['Expected_Residual_Deficit_kWh']:.4f}",
+            outcomes_map.get((a1, a2), "Active"),
+        ])
+    print(f"{BOLD}Table 1A: Expected Physical Energy Balances (kWh/hour):{RESET}")
+    print(format_clean_table(headers_5a, rows_5a, ["left", "right", "right", "right", "left"]))
+    print()
+
+    # Table 1B: Expected Financial Utilities & Welfare
+    headers_5b = ["Strategy Profile", "Gross P2P", "Seller E[U₁]", "Buyer E[U₂]", "Social Welfare"]
+    rows_5b = []
+    for _, r in exp_df.iterrows():
+        a1 = r[f"Action_{dist_h1.house_id}"]
+        a2 = r[f"Action_{dist_h2.house_id}"]
+        rows_5b.append([
+            f"{a1} / {a2}",
+            f"+{r['Expected_Gross_P2P_Payment_AUD']:.4f}",
+            f"{r[f'Expected_Utility_{dist_h1.house_id}']:+.4f}",
+            f"{r[f'Expected_Utility_{dist_h2.house_id}']:+.4f}",
+            f"{r['Expected_Social_Welfare_AUD']:+.4f} AUD/h",
+        ])
+    print(f"{BOLD}Table 1B: Expected Financial Utilities & Community Welfare (AUD/hour):{RESET}")
+    print(format_clean_table(headers_5b, rows_5b, ["left", "right", "right", "right", "right"]))
 
     print_subheading("2. Strategy Profile Uncertainty Statistics (Monte Carlo Dispersion):")
-    dispersion_rows = []
+    disp_headers = ["Strategy Profile", "Seller σ", "Seller 90% Range", "Buyer σ", "Buyer 90% Range"]
+    disp_rows = []
     for _, r in exp_df.iterrows():
         a1 = r[f"Action_{dist_h1.house_id}"]
         a2 = r[f"Action_{dist_h2.house_id}"]
-        dispersion_rows.append({
-            "Strategy Profile": f"{a1} / {a2}",
-            "Seller Std (σ)": f"{r['Std_Seller_Utility_AUD']:.4f}",
-            "Seller 90% Range": f"[{r['Seller_Utility_Q05_AUD']:+.4f}, {r['Seller_Utility_Q95_AUD']:+.4f}]",
-            "Buyer Std (σ)": f"{r['Std_Buyer_Utility_AUD']:.4f}",
-            "Buyer 90% Range": f"[{r['Buyer_Utility_Q05_AUD']:+.4f}, {r['Buyer_Utility_Q95_AUD']:+.4f}]",
-        })
-    print(pd.DataFrame(dispersion_rows).to_string(index=False))
+        disp_rows.append([
+            f"{a1} / {a2}",
+            f"{r['Std_Seller_Utility_AUD']:.4f}",
+            f"[{r['Seller_Utility_Q05_AUD']:+.4f}, {r['Seller_Utility_Q95_AUD']:+.4f}]",
+            f"{r['Std_Buyer_Utility_AUD']:.4f}",
+            f"[{r['Buyer_Utility_Q05_AUD']:+.4f}, {r['Buyer_Utility_Q95_AUD']:+.4f}]",
+        ])
+    print(format_clean_table(disp_headers, disp_rows, ["left", "right", "center", "right", "center"]))
+    print(f"{DIM}Note: σ = Standard Deviation. 90% Range = empirical [5th, 95th] percentiles of hourly utility.{RESET}")
 
     print_subheading("3. Deterministic Selected Hour (Analysis A) vs Stochastic Expected Payoffs (Analysis B):")
     det_u1 = matrix.payoffs_p1
     det_u2 = matrix.payoffs_p2
 
     profiles = [
-        (0, 0, "OFFER_P2P / ACCEPT_P2P (Coordinated)"),
-        (0, 1, "OFFER_P2P / GRID_IMPORT (Buyer Rejects)"),
-        (1, 0, "EXPORT_GRID / ACCEPT_P2P (Seller Rejects)"),
-        (1, 1, "EXPORT_GRID / GRID_IMPORT (Baseline Status Quo)"),
+        (0, 0, "OFFER / ACCEPT (Coord)"),
+        (0, 1, "OFFER / GRID   (Reject)"),
+        (1, 0, "EXPORT / ACCEPT(No Offer)"),
+        (1, 1, "EXPORT / GRID  (Baseline)"),
     ]
 
+    comp_headers = ["Strategy Profile", "Det U₁", "Exp E[U₁]", "Det U₂", "Exp E[U₂]", "Det SW", "Exp SW"]
     comp_rows = []
     for i, j, lbl in profiles:
-        comp_rows.append({
-            "Action Profile": lbl,
-            "Det U_Seller": f"{det_u1[i,j]:+.4f} AUD",
-            "Exp E[U]_Seller": f"{exp_u1[i,j]:+.4f} AUD",
-            "Det U_Buyer": f"{det_u2[i,j]:+.4f} AUD",
-            "Exp E[U]_Buyer": f"{exp_u2[i,j]:+.4f} AUD",
-            "Det Social Welfare": f"{(det_u1[i,j] + det_u2[i,j]):+.4f} AUD",
-            "Exp Social Welfare": f"{(exp_u1[i,j] + exp_u2[i,j]):+.4f} AUD",
-        })
-    print(pd.DataFrame(comp_rows).to_string(index=False))
+        comp_rows.append([
+            lbl,
+            f"{det_u1[i,j]:+.4f}",
+            f"{exp_u1[i,j]:+.4f}",
+            f"{det_u2[i,j]:+.4f}",
+            f"{exp_u2[i,j]:+.4f}",
+            f"{(det_u1[i,j] + det_u2[i,j]):+.4f}",
+            f"{(exp_u1[i,j] + exp_u2[i,j]):+.4f}",
+        ])
+    print(format_clean_table(comp_headers, comp_rows, ["left", "right", "right", "right", "right", "right", "right"]))
+    print(f"{DIM}Note: Values in AUD/h. Det = realized hour; Exp = mean across 1,000 stochastic scenarios.{RESET}")
 
     print_callout(
         "Why Deterministic Realized Payoff Differs from Monte Carlo Expected Payoff",
