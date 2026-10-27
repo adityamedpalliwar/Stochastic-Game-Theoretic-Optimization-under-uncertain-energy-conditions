@@ -63,6 +63,15 @@ def build_two_household_payoff_matrix(
     grid_import_price_aud: float = 0.30,
     grid_export_credit_aud: float = 0.08,
     p2p_price_aud: Optional[float] = None,
+    seller_battery_charged_kwh: float = 0.0,
+    seller_battery_discharged_kwh: float = 0.0,
+    seller_battery_initial_soc: float = 0.0,
+    seller_battery_final_soc: float = 0.0,
+    buyer_battery_charged_kwh: float = 0.0,
+    buyer_battery_discharged_kwh: float = 0.0,
+    buyer_battery_initial_soc: float = 0.0,
+    buyer_battery_final_soc: float = 0.0,
+    degradation_cost_per_kwh: float = 0.0,
 ) -> GamePayoffMatrix:
     """Construct a 2x2 normal-form payoff matrix for energy trading.
 
@@ -71,11 +80,11 @@ def build_two_household_payoff_matrix(
     seller_id : str
         Household ID with surplus solar (e.g. 'H001').
     seller_surplus_kwh : float
-        Available solar surplus in kWh.
+        Available solar surplus in kWh (post-battery if battery storage is present).
     buyer_id : str
         Household ID with demand deficit (e.g. 'H002').
     buyer_deficit_kwh : float
-        Required grid demand in kWh.
+        Required grid demand in kWh (post-battery if battery storage is present).
     grid_import_price_aud : float
         Price to import from grid in AUD/kWh.
     grid_export_credit_aud : float
@@ -83,12 +92,50 @@ def build_two_household_payoff_matrix(
     p2p_price_aud : Optional[float]
         Negotiated P2P price. If None, defaults to mid-market price
         (import_price + export_credit) / 2.
+    seller_battery_charged_kwh : float
+        Energy charged to seller battery in interval.
+    seller_battery_discharged_kwh : float
+        Energy discharged from seller battery in interval.
+    seller_battery_initial_soc : float
+        Seller initial SOC.
+    seller_battery_final_soc : float
+        Seller final SOC.
+    buyer_battery_charged_kwh : float
+        Energy charged to buyer battery in interval.
+    buyer_battery_discharged_kwh : float
+        Energy discharged from buyer battery in interval.
+    buyer_battery_initial_soc : float
+        Buyer initial SOC.
+    buyer_battery_final_soc : float
+        Buyer final SOC.
+    degradation_cost_per_kwh : float
+        Battery degradation cost in AUD/kWh throughput (default 0.0).
 
     Returns
     -------
     GamePayoffMatrix
         Resolved matrix of payoffs and detailed accounting.
     """
+    for name, val in [
+        ("seller_surplus_kwh", seller_surplus_kwh),
+        ("buyer_deficit_kwh", buyer_deficit_kwh),
+        ("grid_import_price_aud", grid_import_price_aud),
+        ("grid_export_credit_aud", grid_export_credit_aud),
+    ]:
+        if not np.isfinite(val):
+            raise ValueError(f"Non-finite input detected for {name}: {val}")
+        if float(val) < -1e-6:
+            raise ValueError(f"{name} must be nonnegative, got {val}")
+
+    if p2p_price_aud is not None:
+        if not np.isfinite(p2p_price_aud):
+            raise ValueError(f"p2p_price_aud must be finite, got {p2p_price_aud}")
+        if float(p2p_price_aud) < -1e-6:
+            raise ValueError(f"p2p_price_aud must be nonnegative, got {p2p_price_aud}")
+
+    if seller_id == buyer_id:
+        raise ValueError(f"Seller and buyer must be distinct households, got {seller_id}")
+
     surplus = max(0.0, float(seller_surplus_kwh))
     deficit = max(0.0, float(buyer_deficit_kwh))
 
@@ -131,6 +178,11 @@ def build_two_household_payoff_matrix(
                 p2p_energy_sold_kwh=q_trade,
                 p2p_energy_bought_kwh=0.0,
                 p2p_price_aud=p2p_price,
+                battery_charged_kwh=seller_battery_charged_kwh,
+                battery_discharged_kwh=seller_battery_discharged_kwh,
+                battery_initial_soc=seller_battery_initial_soc,
+                battery_final_soc=seller_battery_final_soc,
+                battery_degradation_cost_per_kwh=degradation_cost_per_kwh,
             )
 
             # Calculate buyer payoff
@@ -143,6 +195,11 @@ def build_two_household_payoff_matrix(
                 p2p_energy_sold_kwh=0.0,
                 p2p_energy_bought_kwh=q_trade,
                 p2p_price_aud=p2p_price,
+                battery_charged_kwh=buyer_battery_charged_kwh,
+                battery_discharged_kwh=buyer_battery_discharged_kwh,
+                battery_initial_soc=buyer_battery_initial_soc,
+                battery_final_soc=buyer_battery_final_soc,
+                battery_degradation_cost_per_kwh=degradation_cost_per_kwh,
             )
 
             payoffs_p1[i, j] = payoff_seller.utility

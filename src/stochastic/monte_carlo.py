@@ -15,13 +15,29 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
+import zlib
+
 import numpy as np
 import pandas as pd
 
+from src.energy.battery import BatteryStorage
 from src.forecasting.lstm import LSTMWeights, predict_lstm_numpy
 from src.forecasting.predict import EnergyForecaster, ForecastResult
 from src.game.payoff_matrix import GamePayoffMatrix, build_two_household_payoff_matrix
 from src.game.utility import compute_household_payoff
+
+
+def derive_observation_seed(
+    house_id: str,
+    timestamp: Union[str, pd.Timestamp],
+    base_seed: int = 42,
+) -> int:
+    """Generate a deterministic, 32-bit unsigned integer seed from observation identifiers.
+
+    Provides reproducible, order-independent random number generation (Protocol B).
+    """
+    identifier = f"{house_id}_{pd.to_datetime(timestamp)}_{base_seed}"
+    return zlib.crc32(identifier.encode("utf-8"))
 
 
 @dataclass
@@ -167,12 +183,15 @@ class ValidationResidualPool:
         self,
         num_scenarios: int = 1000,
         house_id: Optional[str] = None,
-        random_seed: int = 42,
+        random_seed: Union[int, np.random.Generator, None] = 42,
         paired: bool = True,
         method: str = "empirical",
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Sample residuals preserving correlation and variance."""
-        rng = np.random.default_rng(random_seed)
+        if isinstance(random_seed, np.random.Generator):
+            rng = random_seed
+        else:
+            rng = np.random.default_rng(random_seed)
 
         if house_id is not None:
             mask = (self.val_house_ids == house_id)
@@ -181,10 +200,16 @@ class ValidationResidualPool:
             res = self.residuals
 
         if method == "empirical":
-            # Resample paired residuals from validation observations
-            indices = rng.choice(len(res), size=num_scenarios, replace=True)
-            sampled = res[indices]
-            return sampled[:, 0], sampled[:, 1]
+            if paired:
+                # Resample paired residuals from validation observations (preserves joint distribution)
+                indices = rng.choice(len(res), size=num_scenarios, replace=True)
+                sampled = res[indices]
+                return sampled[:, 0], sampled[:, 1]
+            else:
+                # Resample demand and solar independently (breaks joint dependence)
+                idx_d = rng.choice(len(res), size=num_scenarios, replace=True)
+                idx_s = rng.choice(len(res), size=num_scenarios, replace=True)
+                return res[idx_d, 0], res[idx_s, 1]
         elif method == "gaussian":
             # Parametric Gaussian using standard deviation sigma = sqrt(Var(e))
             mean_d, std_d = np.mean(res[:, 0]), np.std(res[:, 0], ddof=1)
@@ -206,7 +231,7 @@ class MonteCarloSimulator:
         self,
         forecast: ForecastResult,
         num_scenarios: int = 1000,
-        random_seed: int = 42,
+        random_seed: Union[int, np.random.Generator, None] = 42,
         sampling_method: str = "empirical",
     ) -> ScenarioDistribution:
         """Generate 1,000 next-hour physical scenarios for a household.
@@ -217,8 +242,8 @@ class MonteCarloSimulator:
             Deterministic LSTM prediction.
         num_scenarios : int
             Number of Monte Carlo realizations (default 1,000).
-        random_seed : int
-            Reproducible seed.
+        random_seed : Union[int, np.random.Generator, None]
+            Reproducible seed or active Generator.
         sampling_method : str
             'empirical' (recommended paired resampling) or 'gaussian'.
 
@@ -260,13 +285,17 @@ def build_stochastic_payoff_matrix(
     grid_import_price_aud: float = 0.30,
     grid_export_credit_aud: float = 0.08,
     p2p_price_aud: Optional[float] = None,
+    battery_seller: Optional[BatteryStorage] = None,
+    battery_buyer: Optional[BatteryStorage] = None,
+    duration_hours: float = 1.0,
+    degradation_cost_per_kwh: float = 0.0,
 ) -> Tuple[GamePayoffMatrix, pd.DataFrame, Dict[str, Union[float, int]]]:
     """Construct a GamePayoffMatrix and detailed accounting metrics for expected payoffs.
 
     For every strategy profile a = (a1, a2), utilities and physical energy flows
     are evaluated scenario-by-scenario across all realizations s:
-        S_1^{(s)} = max(0, G_1^{(s)} - D_1^{(s)})
-        L_2^{(s)} = max(0, D_2^{(s)} - G_2^{(s)})
+        S_1^{(s)} = max(0, G_1^{(s)} - D_1^{(s)} - C_1^{(s)})
+        L_2^{(s)} = max(0, D_2^{(s)} - G_2^{(s)} - D_2^{(s)})
         Q_P2P^{(s)} = min(S_1^{(s)}, L_2^{(s)}) if (a1, a2) == ('OFFER_P2P', 'ACCEPT_P2P') else 0.0
 
     Then:
@@ -286,18 +315,74 @@ def build_stochastic_payoff_matrix(
             f"Scenario count mismatch: seller has {n_scenarios}, buyer has {len(dist_buyer.scenarios_demand_kwh)}"
         )
 
+    # Raw physical surplus and deficit across scenarios
+    raw_surplus_seller = np.maximum(
+        0.0, dist_seller.scenarios_solar_kwh - dist_seller.scenarios_demand_kwh
+    )
+    raw_deficit_seller = np.maximum(
+        0.0, dist_seller.scenarios_demand_kwh - dist_seller.scenarios_solar_kwh
+    )
+
+    raw_surplus_buyer = np.maximum(
+        0.0, dist_buyer.scenarios_solar_kwh - dist_buyer.scenarios_demand_kwh
+    )
+    raw_deficit_buyer = np.maximum(
+        0.0, dist_buyer.scenarios_demand_kwh - dist_buyer.scenarios_solar_kwh
+    )
+
+    # Battery dispatch for seller (if present)
+    if battery_seller is not None:
+        e0_s = float(battery_seller.current_charge_kwh)
+        headroom_s = (battery_seller.max_charge_kwh - e0_s) / battery_seller.charge_efficiency
+        max_p_ch_s = battery_seller.max_charge_rate_kw * duration_hours
+        seller_charged = np.maximum(0.0, np.minimum(raw_surplus_seller, np.minimum(max_p_ch_s, headroom_s)))
+
+        footroom_s = (e0_s - battery_seller.min_charge_kwh) * battery_seller.discharge_efficiency
+        max_p_dis_s = battery_seller.max_discharge_rate_kw * duration_hours
+        seller_discharged = np.maximum(0.0, np.minimum(raw_deficit_seller, np.minimum(max_p_dis_s, footroom_s)))
+
+        surplus_seller = raw_surplus_seller - seller_charged
+        deficit_seller = raw_deficit_seller - seller_discharged
+        final_e_s = e0_s + battery_seller.charge_efficiency * seller_charged - (seller_discharged / battery_seller.discharge_efficiency)
+        final_soc_s = final_e_s / battery_seller.capacity_kwh
+        init_soc_s = e0_s / battery_seller.capacity_kwh
+    else:
+        seller_charged = np.zeros(n_scenarios, dtype=float)
+        seller_discharged = np.zeros(n_scenarios, dtype=float)
+        surplus_seller = raw_surplus_seller
+        deficit_seller = raw_deficit_seller
+        final_soc_s = np.zeros(n_scenarios, dtype=float)
+        init_soc_s = 0.0
+
+    # Battery dispatch for buyer (if present)
+    if battery_buyer is not None:
+        e0_b = float(battery_buyer.current_charge_kwh)
+        headroom_b = (battery_buyer.max_charge_kwh - e0_b) / battery_buyer.charge_efficiency
+        max_p_ch_b = battery_buyer.max_charge_rate_kw * duration_hours
+        buyer_charged = np.maximum(0.0, np.minimum(raw_surplus_buyer, np.minimum(max_p_ch_b, headroom_b)))
+
+        footroom_b = (e0_b - battery_buyer.min_charge_kwh) * battery_buyer.discharge_efficiency
+        max_p_dis_b = battery_buyer.max_discharge_rate_kw * duration_hours
+        buyer_discharged = np.maximum(0.0, np.minimum(raw_deficit_buyer, np.minimum(max_p_dis_b, footroom_b)))
+
+        surplus_buyer = raw_surplus_buyer - buyer_charged
+        deficit_buyer = raw_deficit_buyer - buyer_discharged
+        final_e_b = e0_b + battery_buyer.charge_efficiency * buyer_charged - (buyer_discharged / battery_buyer.discharge_efficiency)
+        final_soc_b = final_e_b / battery_buyer.capacity_kwh
+        init_soc_b = e0_b / battery_buyer.capacity_kwh
+    else:
+        buyer_charged = np.zeros(n_scenarios, dtype=float)
+        buyer_discharged = np.zeros(n_scenarios, dtype=float)
+        surplus_buyer = raw_surplus_buyer
+        deficit_buyer = raw_deficit_buyer
+        final_soc_b = np.zeros(n_scenarios, dtype=float)
+        init_soc_b = 0.0
+
+    trade_q_scenarios = np.minimum(surplus_seller, deficit_buyer)
+
     exp_u1 = np.zeros((2, 2), dtype=float)
     exp_u2 = np.zeros((2, 2), dtype=float)
     exp_q = np.zeros((2, 2), dtype=float)
-
-    # Physical surplus and deficit across scenarios
-    surplus_seller = np.maximum(
-        0.0, dist_seller.scenarios_solar_kwh - dist_seller.scenarios_demand_kwh
-    )
-    deficit_buyer = np.maximum(
-        0.0, dist_buyer.scenarios_demand_kwh - dist_buyer.scenarios_solar_kwh
-    )
-    trade_q_scenarios = np.minimum(surplus_seller, deficit_buyer)
 
     rows = []
 
@@ -317,8 +402,11 @@ def build_stochastic_payoff_matrix(
             seller_export_rev = rem_surplus * grid_export_credit_aud
             buyer_import_cost = rem_deficit * grid_import_price_aud
 
-            total_seller_rev = gross_p2p_revenue + seller_export_rev
-            total_buyer_cost = gross_p2p_payment + buyer_import_cost
+            seller_deg = (seller_charged + seller_discharged) * degradation_cost_per_kwh
+            buyer_deg = (buyer_charged + buyer_discharged) * degradation_cost_per_kwh
+
+            total_seller_rev = gross_p2p_revenue + seller_export_rev - seller_deg
+            total_buyer_cost = gross_p2p_payment + buyer_import_cost + buyer_deg
 
             u1_s = total_seller_rev
             u2_s = -total_buyer_cost
@@ -346,7 +434,8 @@ def build_stochastic_payoff_matrix(
                 "Expected_Buyer_Cost_AUD": round(float(np.mean(total_buyer_cost)), 4),
                 f"Expected_Utility_{dist_seller.house_id}": round(mean_u1, 4),
                 f"Expected_Utility_{dist_buyer.house_id}": round(mean_u2, 4),
-                "Expected_Social_Welfare_AUD": round(float(np.mean(welfare_s)), 4),
+                "Expected_Combined_Household_Utility_AUD": round(float(np.mean(welfare_s)), 4),
+                "Expected_Social_Welfare_AUD": round(float(np.mean(welfare_s)), 4),  # alias for backward compatibility
                 "Expected_Community_Net_Cost_AUD": round(float(np.mean(total_buyer_cost - total_seller_rev)), 4),
                 "Std_Seller_Utility_AUD": round(float(np.std(u1_s, ddof=ddof_val)), 4),
                 "Std_Buyer_Utility_AUD": round(float(np.std(u2_s, ddof=ddof_val)), 4),
@@ -355,6 +444,10 @@ def build_stochastic_payoff_matrix(
                 "Buyer_Utility_Q05_AUD": round(float(np.percentile(u2_s, 5)), 4),
                 "Buyer_Utility_Q95_AUD": round(float(np.percentile(u2_s, 95)), 4),
                 "Expected_Payoff_Pair": f"({mean_u1:.4f}, {mean_u2:.4f})",
+                "Expected_Seller_Battery_Charged_kWh": round(float(np.mean(seller_charged)), 4),
+                "Expected_Seller_Battery_Discharged_kWh": round(float(np.mean(seller_discharged)), 4),
+                "Expected_Buyer_Battery_Charged_kWh": round(float(np.mean(buyer_charged)), 4),
+                "Expected_Buyer_Battery_Discharged_kWh": round(float(np.mean(buyer_discharged)), 4),
             })
 
     matrix = GamePayoffMatrix(
@@ -388,6 +481,14 @@ def build_stochastic_payoff_matrix(
         "community_expected_saving_aud": float(
             (exp_u1[0, 0] + exp_u2[0, 0]) - (exp_u1[1, 1] + exp_u2[1, 1])
         ),
+        "seller_battery_charged_mean_kwh": float(np.mean(seller_charged)),
+        "seller_battery_discharged_mean_kwh": float(np.mean(seller_discharged)),
+        "seller_battery_initial_soc": float(init_soc_s),
+        "seller_battery_final_soc_mean": float(np.mean(final_soc_s)),
+        "buyer_battery_charged_mean_kwh": float(np.mean(buyer_charged)),
+        "buyer_battery_discharged_mean_kwh": float(np.mean(buyer_discharged)),
+        "buyer_battery_initial_soc": float(init_soc_b),
+        "buyer_battery_final_soc_mean": float(np.mean(final_soc_b)),
     }
 
     return matrix, pd.DataFrame(rows), scenario_stats
@@ -399,6 +500,10 @@ def estimate_expected_payoff_matrix(
     grid_import_price_aud: float = 0.30,
     grid_export_credit_aud: float = 0.08,
     p2p_price_aud: Optional[float] = None,
+    battery_seller: Optional[BatteryStorage] = None,
+    battery_buyer: Optional[BatteryStorage] = None,
+    duration_hours: float = 1.0,
+    degradation_cost_per_kwh: float = 0.0,
 ) -> Tuple[pd.DataFrame, np.ndarray, np.ndarray]:
     """Estimate expected payoffs across 1,000 Monte Carlo scenarios.
 
@@ -411,5 +516,220 @@ def estimate_expected_payoff_matrix(
         grid_import_price_aud=grid_import_price_aud,
         grid_export_credit_aud=grid_export_credit_aud,
         p2p_price_aud=p2p_price_aud,
+        battery_seller=battery_seller,
+        battery_buyer=battery_buyer,
+        duration_hours=duration_hours,
+        degradation_cost_per_kwh=degradation_cost_per_kwh,
     )
     return df_summary, matrix.payoffs_p1, matrix.payoffs_p2
+
+
+@dataclass
+class StochasticMarketClearingSummary:
+    """Statistical summary of multi-household market clearing evaluated across Monte Carlo scenarios."""
+
+    num_scenarios: int
+    policy: str
+    expected_traded_kwh: float
+    std_traded_kwh: float
+    max_traded_kwh: float
+    active_trading_frequency_pct: float
+    expected_household_utilities: Dict[str, float]
+    utility_std: Dict[str, float]
+    utility_q05: Dict[str, float]
+    utility_q95: Dict[str, float]
+    expected_combined_utility_aud: float
+    expected_p2p_sold_kwh: Dict[str, float]
+    expected_p2p_bought_kwh: Dict[str, float]
+    expected_grid_export_kwh: Dict[str, float]
+    expected_grid_import_kwh: Dict[str, float]
+    expected_battery_charged_kwh: Dict[str, float]
+    expected_battery_discharged_kwh: Dict[str, float]
+    expected_final_soc: Dict[str, float]
+    deterministic_mean_traded_kwh: float
+    jensen_overestimation_kwh: float
+    scenario_dataframe: pd.DataFrame
+
+
+def run_stochastic_multi_household_clearing(
+    scenario_distributions: Dict[str, ScenarioDistribution],
+    batteries: Optional[Dict[str, BatteryStorage]] = None,
+    p2p_price_aud: float = 0.19,
+    grid_import_price_aud: float = 0.30,
+    grid_export_credit_aud: float = 0.08,
+    policy: str = "priority_order",
+    priority_order: Optional[Sequence[str]] = None,
+    degradation_cost_per_kwh: float = 0.0,
+    timestamp: Optional[pd.Timestamp] = None,
+) -> Tuple[StochasticMarketClearingSummary, pd.DataFrame]:
+    """Execute scenario-by-scenario multi-household P2P market clearing across Monte Carlo realizations.
+
+    CRITICAL INVARIANT: Evaluates market clearing scenario-by-scenario. Does not replace
+    uncertain solar/demand with mean values prior to market clearing.
+
+    Parameters:
+        scenario_distributions: Map of house_id -> ScenarioDistribution (all with same num_scenarios).
+        batteries: Optional map of house_id -> BatteryStorage (dispatched battery-first before clearing).
+        p2p_price_aud: Mid-market P2P transaction price.
+        grid_import_price_aud: Retail grid import tariff.
+        grid_export_credit_aud: Solar feed-in credit.
+        policy: MarketClearingPolicy name ('priority_order', 'largest_surplus_first', 'pro_rata').
+        priority_order: Optional priority sequence for matching.
+        degradation_cost_per_kwh: Battery cycle degradation cost.
+        timestamp: Optional observation timestamp.
+
+    Returns:
+        (StochasticMarketClearingSummary, scenario_dataframe)
+    """
+    from src.energy.market_clearing import MarketClearingPolicy, clear_multi_household_market
+    from src.energy.energy_balance import compute_energy_balance, compute_battery_aware_balance
+
+    house_ids = sorted(scenario_distributions.keys())
+    if not house_ids:
+        raise ValueError("Must provide at least one household scenario distribution.")
+
+    n_scenarios = scenario_distributions[house_ids[0]].num_scenarios
+    for hid in house_ids:
+        if scenario_distributions[hid].num_scenarios != n_scenarios:
+            raise ValueError(
+                f"Scenario count mismatch: {hid} has {scenario_distributions[hid].num_scenarios} "
+                f"while {house_ids[0]} has {n_scenarios}"
+            )
+
+    traded_kwh_arr = np.zeros(n_scenarios, dtype=float)
+    utilities_arr = {hid: np.zeros(n_scenarios, dtype=float) for hid in house_ids}
+    p2p_sold_arr = {hid: np.zeros(n_scenarios, dtype=float) for hid in house_ids}
+    p2p_bought_arr = {hid: np.zeros(n_scenarios, dtype=float) for hid in house_ids}
+    grid_exp_arr = {hid: np.zeros(n_scenarios, dtype=float) for hid in house_ids}
+    grid_imp_arr = {hid: np.zeros(n_scenarios, dtype=float) for hid in house_ids}
+    bat_ch_arr = {hid: np.zeros(n_scenarios, dtype=float) for hid in house_ids}
+    bat_dis_arr = {hid: np.zeros(n_scenarios, dtype=float) for hid in house_ids}
+    final_soc_arr = {hid: np.zeros(n_scenarios, dtype=float) for hid in house_ids}
+
+    scenario_rows = []
+
+    # Scenario-by-scenario evaluation
+    for s in range(n_scenarios):
+        scenario_balances = []
+        for hid in house_ids:
+            d_s = float(scenario_distributions[hid].scenarios_demand_kwh[s])
+            g_s = float(scenario_distributions[hid].scenarios_solar_kwh[s])
+
+            if batteries is not None and hid in batteries and batteries[hid] is not None:
+                b_s = compute_battery_aware_balance(
+                    demand_kwh=d_s,
+                    solar_generation_kwh=g_s,
+                    battery=batteries[hid].copy(),
+                    house_id=hid,
+                    timestamp=timestamp,
+                )
+            else:
+                b_s = compute_energy_balance(
+                    demand_kwh=d_s,
+                    solar_generation_kwh=g_s,
+                    house_id=hid,
+                    timestamp=timestamp,
+                )
+            scenario_balances.append(b_s)
+
+        res = clear_multi_household_market(
+            bids_or_balances=scenario_balances,
+            p2p_price_aud=p2p_price_aud,
+            grid_import_price_aud=grid_import_price_aud,
+            grid_export_credit_aud=grid_export_credit_aud,
+            policy=policy,
+            priority_order=priority_order,
+            degradation_cost_per_kwh=degradation_cost_per_kwh,
+            timestamp=timestamp,
+        )
+
+        traded_kwh_arr[s] = res.total_traded_kwh
+        row = {"Scenario": s, "Total_P2P_Traded_kWh": res.total_traded_kwh, "Transactions_Count": len(res.transactions)}
+
+        for hid in house_ids:
+            pt = res.post_trade_balances[hid]
+            pay = res.payoffs[hid]
+
+            utilities_arr[hid][s] = pay.utility
+            p2p_sold_arr[hid][s] = pt.p2p_sold_kwh
+            p2p_bought_arr[hid][s] = pt.p2p_bought_kwh
+            grid_exp_arr[hid][s] = pt.grid_exported_kwh
+            grid_imp_arr[hid][s] = pt.grid_imported_kwh
+            bat_ch_arr[hid][s] = getattr(pt, "solar_to_battery_kwh", 0.0)
+            bat_dis_arr[hid][s] = getattr(pt, "battery_to_demand_kwh", 0.0)
+            final_soc_arr[hid][s] = getattr(pt, "battery_final_soc", 0.0)
+
+            row[f"Utility_{hid}_AUD"] = pay.utility
+            row[f"P2P_Sold_{hid}_kWh"] = pt.p2p_sold_kwh
+            row[f"P2P_Bought_{hid}_kWh"] = pt.p2p_bought_kwh
+
+        row["Combined_Utility_AUD"] = res.community_summary.combined_household_utility_aud
+        scenario_rows.append(row)
+
+    df_scenarios = pd.DataFrame(scenario_rows)
+
+    # Naive mean deterministic evaluation for Jensen's inequality comparison
+    mean_balances = []
+    for hid in house_ids:
+        mean_d = float(np.mean(scenario_distributions[hid].scenarios_demand_kwh))
+        mean_g = float(np.mean(scenario_distributions[hid].scenarios_solar_kwh))
+        if batteries is not None and hid in batteries and batteries[hid] is not None:
+            b_m = compute_battery_aware_balance(
+                demand_kwh=mean_d,
+                solar_generation_kwh=mean_g,
+                battery=batteries[hid].copy(),
+                house_id=hid,
+                timestamp=timestamp,
+            )
+        else:
+            b_m = compute_energy_balance(
+                demand_kwh=mean_d,
+                solar_generation_kwh=mean_g,
+                house_id=hid,
+                timestamp=timestamp,
+            )
+        mean_balances.append(b_m)
+
+    res_mean = clear_multi_household_market(
+        bids_or_balances=mean_balances,
+        p2p_price_aud=p2p_price_aud,
+        grid_import_price_aud=grid_import_price_aud,
+        grid_export_credit_aud=grid_export_credit_aud,
+        policy=policy,
+        priority_order=priority_order,
+        degradation_cost_per_kwh=degradation_cost_per_kwh,
+        timestamp=timestamp,
+    )
+    det_mean_traded = res_mean.total_traded_kwh
+    exp_traded = float(np.mean(traded_kwh_arr))
+    jensen_diff = det_mean_traded - exp_traded
+
+    ddof_val = 1 if n_scenarios > 1 else 0
+    tradeable_count = int(np.sum(traded_kwh_arr > 1e-6))
+    active_freq = (tradeable_count / n_scenarios) * 100.0
+
+    summary = StochasticMarketClearingSummary(
+        num_scenarios=n_scenarios,
+        policy=str(policy),
+        expected_traded_kwh=round(exp_traded, 4),
+        std_traded_kwh=round(float(np.std(traded_kwh_arr, ddof=ddof_val)), 4),
+        max_traded_kwh=round(float(np.max(traded_kwh_arr)), 4),
+        active_trading_frequency_pct=round(active_freq, 2),
+        expected_household_utilities={hid: round(float(np.mean(utilities_arr[hid])), 4) for hid in house_ids},
+        utility_std={hid: round(float(np.std(utilities_arr[hid], ddof=ddof_val)), 4) for hid in house_ids},
+        utility_q05={hid: round(float(np.percentile(utilities_arr[hid], 5)), 4) for hid in house_ids},
+        utility_q95={hid: round(float(np.percentile(utilities_arr[hid], 95)), 4) for hid in house_ids},
+        expected_combined_utility_aud=round(float(np.mean([sum(utilities_arr[h][s] for h in house_ids) for s in range(n_scenarios)])), 4),
+        expected_p2p_sold_kwh={hid: round(float(np.mean(p2p_sold_arr[hid])), 4) for hid in house_ids},
+        expected_p2p_bought_kwh={hid: round(float(np.mean(p2p_bought_arr[hid])), 4) for hid in house_ids},
+        expected_grid_export_kwh={hid: round(float(np.mean(grid_exp_arr[hid])), 4) for hid in house_ids},
+        expected_grid_import_kwh={hid: round(float(np.mean(grid_imp_arr[hid])), 4) for hid in house_ids},
+        expected_battery_charged_kwh={hid: round(float(np.mean(bat_ch_arr[hid])), 4) for hid in house_ids},
+        expected_battery_discharged_kwh={hid: round(float(np.mean(bat_dis_arr[hid])), 4) for hid in house_ids},
+        expected_final_soc={hid: round(float(np.mean(final_soc_arr[hid])), 4) for hid in house_ids},
+        deterministic_mean_traded_kwh=round(det_mean_traded, 4),
+        jensen_overestimation_kwh=round(jensen_diff, 4),
+        scenario_dataframe=df_scenarios,
+    )
+
+    return summary, df_scenarios

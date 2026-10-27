@@ -36,6 +36,14 @@ class GameComparisonResult:
     selected_strategy_p2: str
     is_nash_equilibrium: bool
     is_strict_equilibrium: bool
+    battery_p1_charged_kwh: float = 0.0
+    battery_p1_discharged_kwh: float = 0.0
+    battery_p1_initial_soc: float = 0.0
+    battery_p1_final_soc: float = 0.0
+    battery_p2_charged_kwh: float = 0.0
+    battery_p2_discharged_kwh: float = 0.0
+    battery_p2_initial_soc: float = 0.0
+    battery_p2_final_soc: float = 0.0
 
     def to_dataframe(self) -> pd.DataFrame:
         """Present comparison as a clear summary table."""
@@ -103,6 +111,17 @@ def run_two_household_game(
     seller = balance_p1 if balance_p1.surplus_kwh >= balance_p2.surplus_kwh else balance_p2
     buyer = balance_p2 if seller == balance_p1 else balance_p1
 
+    # Extract battery fields if present on balances
+    s_ch = getattr(seller, "solar_to_battery_kwh", 0.0)
+    s_dis = getattr(seller, "battery_to_demand_kwh", 0.0)
+    s_isoc = getattr(seller, "battery_initial_soc", 0.0)
+    s_fsoc = getattr(seller, "battery_final_soc", 0.0)
+
+    b_ch = getattr(buyer, "solar_to_battery_kwh", 0.0)
+    b_dis = getattr(buyer, "battery_to_demand_kwh", 0.0)
+    b_isoc = getattr(buyer, "battery_initial_soc", 0.0)
+    b_fsoc = getattr(buyer, "battery_final_soc", 0.0)
+
     matrix = build_two_household_payoff_matrix(
         seller_id=seller.house_id,
         seller_surplus_kwh=seller.surplus_kwh,
@@ -111,6 +130,14 @@ def run_two_household_game(
         grid_import_price_aud=grid_import_price_aud,
         grid_export_credit_aud=grid_export_credit_aud,
         p2p_price_aud=p2p_price_aud,
+        seller_battery_charged_kwh=s_ch,
+        seller_battery_discharged_kwh=s_dis,
+        seller_battery_initial_soc=s_isoc,
+        seller_battery_final_soc=s_fsoc,
+        buyer_battery_charged_kwh=b_ch,
+        buyer_battery_discharged_kwh=b_dis,
+        buyer_battery_initial_soc=b_isoc,
+        buyer_battery_final_soc=b_fsoc,
     )
 
     eq_result = find_pure_nash_equilibria(matrix)
@@ -159,6 +186,14 @@ def run_two_household_game(
         selected_strategy_p2=act_buyer,
         is_nash_equilibrium=is_nash,
         is_strict_equilibrium=is_strict,
+        battery_p1_charged_kwh=s_ch,
+        battery_p1_discharged_kwh=s_dis,
+        battery_p1_initial_soc=s_isoc,
+        battery_p1_final_soc=s_fsoc,
+        battery_p2_charged_kwh=b_ch,
+        battery_p2_discharged_kwh=b_dis,
+        battery_p2_initial_soc=b_isoc,
+        battery_p2_final_soc=b_fsoc,
     )
 
     return matrix, eq_result, comp

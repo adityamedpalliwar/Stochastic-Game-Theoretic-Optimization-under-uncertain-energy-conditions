@@ -25,6 +25,13 @@ class BatteryState:
     soc: float
     charged_kwh: float
     discharged_kwh: float
+    initial_charge_kwh: float = 0.0
+    initial_soc: float = 0.0
+
+    @property
+    def net_stored_energy_change_kwh(self) -> float:
+        """Net change in stored energy: positive = charged, negative = depleted."""
+        return self.current_charge_kwh - self.initial_charge_kwh
 
 
 class BatteryStorage:
@@ -55,6 +62,7 @@ class BatteryStorage:
         self.discharge_efficiency = float(discharge_efficiency)
         self.min_soc = float(min_soc)
         self.max_soc = float(max_soc)
+        self.default_initial_soc = float(initial_soc)
 
         self.min_charge_kwh = self.min_soc * self.capacity_kwh
         self.max_charge_kwh = self.max_soc * self.capacity_kwh
@@ -64,6 +72,42 @@ class BatteryStorage:
     def soc(self) -> float:
         """Current State of Charge in [0, 1]."""
         return self.current_charge_kwh / self.capacity_kwh
+
+    def reset(self, initial_soc: Optional[float] = None) -> None:
+        """Reset battery state of charge."""
+        target_soc = self.default_initial_soc if initial_soc is None else float(initial_soc)
+        if not (self.min_soc <= target_soc <= self.max_soc):
+            raise ValueError(
+                f"Cannot reset: target SOC {target_soc:.4f} outside [{self.min_soc}, {self.max_soc}]."
+            )
+        self.current_charge_kwh = target_soc * self.capacity_kwh
+
+    def copy(self) -> BatteryStorage:
+        """Create an independent copy with the current state."""
+        b = BatteryStorage(
+            capacity_kwh=self.capacity_kwh,
+            max_charge_rate_kw=self.max_charge_rate_kw,
+            max_discharge_rate_kw=self.max_discharge_rate_kw,
+            charge_efficiency=self.charge_efficiency,
+            discharge_efficiency=self.discharge_efficiency,
+            min_soc=self.min_soc,
+            max_soc=self.max_soc,
+            initial_soc=self.default_initial_soc,
+        )
+        b.current_charge_kwh = float(self.current_charge_kwh)
+        return b
+
+    def available_charge_headroom_kwh(self, duration_hours: float = 1.0) -> float:
+        """Maximum energy that can enter battery during this interval given power and SOC limits."""
+        max_from_power = self.max_charge_rate_kw * duration_hours
+        headroom_kwh = (self.max_charge_kwh - self.current_charge_kwh) / self.charge_efficiency
+        return max(0.0, min(max_from_power, headroom_kwh))
+
+    def available_discharge_capacity_kwh(self, duration_hours: float = 1.0) -> float:
+        """Maximum energy that can be delivered from battery during this interval given power and SOC limits."""
+        max_from_power = self.max_discharge_rate_kw * duration_hours
+        available_stored = (self.current_charge_kwh - self.min_charge_kwh) * self.discharge_efficiency
+        return max(0.0, min(max_from_power, available_stored))
 
     def step(
         self,
@@ -87,9 +131,25 @@ class BatteryStorage:
         BatteryState
             Resulting state with actual charged and discharged kWh.
         """
+        for name, val in [
+            ("energy_available_to_charge_kwh", energy_available_to_charge_kwh),
+            ("energy_requested_to_discharge_kwh", energy_requested_to_discharge_kwh),
+            ("duration_hours", duration_hours),
+        ]:
+            if not np.isfinite(val):
+                raise ValueError(f"{name} must be a finite number, got {val}")
+            if float(val) < -1e-6:
+                raise ValueError(f"{name} must be nonnegative, got {val}")
+
+        if duration_hours <= 0.0:
+            raise ValueError(f"duration_hours must be positive, got {duration_hours}")
+
         # Mutual exclusion: cannot charge and discharge simultaneously
         if energy_available_to_charge_kwh > 0.0 and energy_requested_to_discharge_kwh > 0.0:
             raise ValueError("Cannot charge and discharge simultaneously in the same step.")
+
+        initial_charge = float(self.current_charge_kwh)
+        initial_soc = float(self.soc)
 
         actual_charged = 0.0
         actual_discharged = 0.0
@@ -119,4 +179,6 @@ class BatteryStorage:
             soc=self.soc,
             charged_kwh=actual_charged,
             discharged_kwh=actual_discharged,
+            initial_charge_kwh=initial_charge,
+            initial_soc=initial_soc,
         )

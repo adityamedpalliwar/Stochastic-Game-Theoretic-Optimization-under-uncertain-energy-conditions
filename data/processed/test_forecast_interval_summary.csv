@@ -1,0 +1,9 @@
+household,target_variable,unit,n_observations,mae_kwh,rmse_kwh,mean_bias_kwh,nominal_coverage_pct,empirical_coverage_pct,mean_width_kwh,median_width_kwh,fraction_below_lower_pct,fraction_above_upper_pct
+H001,total_demand_kwh,kWh,1752,0.520536,0.816167,0.377574,90.0,80.02,1.5629,1.588,5.76,14.21
+H001,solar_generation_kwh,kWh,1752,0.131566,0.246457,-0.007837,90.0,91.27,0.782,0.6911,6.74,2.0
+H002,total_demand_kwh,kWh,1752,0.401419,0.59594,-0.134696,90.0,82.02,0.6353,0.5673,5.65,12.33
+H002,solar_generation_kwh,kWh,1752,0.059803,0.092681,-0.041279,90.0,87.27,0.1559,0.1395,7.93,4.79
+H003,total_demand_kwh,kWh,1752,0.476001,0.905378,0.159069,90.0,83.68,1.5037,1.4796,5.99,10.33
+H003,solar_generation_kwh,kWh,1752,0.052893,0.086601,-0.041226,90.0,89.73,0.1497,0.1302,7.13,3.14
+ALL,total_demand_kwh,kWh,5256,0.465985,0.783365,0.133982,90.0,81.91,1.234,1.4576,5.8,12.29
+ALL,solar_generation_kwh,kWh,5256,0.081421,0.160032,-0.030114,90.0,89.42,0.3625,0.2399,7.27,3.31
