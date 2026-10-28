@@ -358,3 +358,65 @@ def test_stochastic_multi_household_clearing_integration():
     tot_sold = sum(summary.expected_p2p_sold_kwh.values())
     tot_bought = sum(summary.expected_p2p_bought_kwh.values())
     assert pytest.approx(tot_sold, abs=1e-4) == tot_bought
+
+
+def test_stochastic_multi_household_clearing_with_batteries_and_conservation():
+    """Verify stochastic clearing integrates residential battery dispatch and exact conservation."""
+    np.random.seed(42)
+    n = 100
+    d1 = ScenarioDistribution(
+        house_id="H001",
+        num_scenarios=n,
+        forecast_demand_mean_kwh=0.5,
+        forecast_solar_mean_kwh=2.5,
+        scenarios_demand_kwh=np.maximum(0.0, np.random.normal(0.5, 0.1, n)),
+        scenarios_solar_kwh=np.maximum(0.0, np.random.normal(2.5, 0.5, n)),
+    )
+    d2 = ScenarioDistribution(
+        house_id="H002",
+        num_scenarios=n,
+        forecast_demand_mean_kwh=2.5,
+        forecast_solar_mean_kwh=0.5,
+        scenarios_demand_kwh=np.maximum(0.0, np.random.normal(2.5, 0.5, n)),
+        scenarios_solar_kwh=np.maximum(0.0, np.random.normal(0.5, 0.1, n)),
+    )
+    d3 = ScenarioDistribution(
+        house_id="H003",
+        num_scenarios=n,
+        forecast_demand_mean_kwh=1.0,
+        forecast_solar_mean_kwh=0.2,
+        scenarios_demand_kwh=np.maximum(0.0, np.random.normal(1.0, 0.2, n)),
+        scenarios_solar_kwh=np.maximum(0.0, np.random.normal(0.2, 0.05, n)),
+    )
+
+    batteries = {
+        "H001": BatteryStorage(capacity_kwh=5.0, initial_soc=0.50),
+        "H002": BatteryStorage(capacity_kwh=5.0, initial_soc=0.50),
+        "H003": BatteryStorage(capacity_kwh=5.0, initial_soc=0.50),
+    }
+
+    summary, df_scenarios = run_stochastic_multi_household_clearing(
+        scenario_distributions={"H001": d1, "H002": d2, "H003": d3},
+        batteries=batteries,
+        p2p_price_aud=0.19,
+        grid_import_price_aud=0.30,
+        grid_export_credit_aud=0.08,
+    )
+
+    assert summary.num_scenarios == n
+    assert len(df_scenarios) == n
+
+    # Total expected sold must equal total expected bought across the community
+    tot_sold = sum(summary.expected_p2p_sold_kwh.values())
+    tot_bought = sum(summary.expected_p2p_bought_kwh.values())
+    assert pytest.approx(tot_sold, abs=1e-5) == tot_bought
+
+    # Verify battery SOC stays within physical limits [0.10, 0.90]
+    for hid in ["H001", "H002", "H003"]:
+        assert 0.10 <= summary.expected_final_soc[hid] <= 0.90
+        assert summary.expected_battery_charged_kwh[hid] >= 0.0
+        assert summary.expected_battery_discharged_kwh[hid] >= 0.0
+
+    # Ensure H001 charges on average from high solar surplus, H002 discharges on average
+    assert summary.expected_battery_charged_kwh["H001"] > 0.5
+    assert summary.expected_battery_discharged_kwh["H002"] > 0.5
