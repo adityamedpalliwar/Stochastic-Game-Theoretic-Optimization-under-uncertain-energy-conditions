@@ -141,6 +141,7 @@ class ValidationResidualPool:
         self.y_val = seq["y_val"]
         self.val_house_ids = np.asarray(seq["val_house_id"])
         self.val_timestamps = seq["val_target_timestamp"]
+        self.val_hours = pd.to_datetime(self.val_timestamps).hour.to_numpy()
 
         # Run model on validation sequences
         preds_scaled = predict_lstm_numpy(self.X_val, self.forecaster.weights)
@@ -183,6 +184,7 @@ class ValidationResidualPool:
         self,
         num_scenarios: int = 1000,
         house_id: Optional[str] = None,
+        hour_of_day: Optional[int] = None,
         random_seed: Union[int, np.random.Generator, None] = 42,
         paired: bool = True,
         method: str = "empirical",
@@ -193,11 +195,16 @@ class ValidationResidualPool:
         else:
             rng = np.random.default_rng(random_seed)
 
+        mask = np.ones(len(self.residuals), dtype=bool)
         if house_id is not None:
-            mask = (self.val_house_ids == house_id)
-            res = self.residuals[mask]
-        else:
-            res = self.residuals
+            mask = mask & (self.val_house_ids == house_id)
+        if hour_of_day is not None:
+            mask = mask & (self.val_hours == hour_of_day)
+
+        res = self.residuals[mask]
+        if len(res) == 0:
+            # Fallback if specific hour has no matching entries
+            res = self.residuals[self.val_house_ids == house_id] if house_id is not None else self.residuals
 
         if method == "empirical":
             if paired:
