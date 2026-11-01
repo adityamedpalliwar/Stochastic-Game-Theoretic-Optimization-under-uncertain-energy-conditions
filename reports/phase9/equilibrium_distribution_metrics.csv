@@ -1,0 +1,14 @@
+metric,deterministic_phase8c,stochastic_phase8e,interpretation
+total_evaluated_hours,1752.0,1752.0,Total held-out evaluation timestamps
+tradeable_hours_count,866.0,722.0,Hours with positive bilateral cleared volume
+zero_trade_hours_count,886.0,1030.0,Hours with zero P2P transactions
+total_pure_nash_equilibria,315280.0,361507.0,Total pure Nash equilibria across all hours
+mean_pne_per_hour,179.9543378995434,206.33961187214612,Mean equilibrium multiplicity per timestamp
+median_pne_per_hour,343.0,343.0,Median equilibrium multiplicity per timestamp
+total_strict_pne,1224.0,1825.0,Equilibria where all unilateral deviations strictly decrease payoff
+total_weak_pne,314056.0,359682.0,Equilibria supported by payoff indifference across deviations
+strict_pne_percentage,0.38822633849276833,0.504831165095005,Fraction of detected PNE that are strict
+weak_pne_percentage,99.61177366150723,99.49516883490499,Fraction of detected PNE that are weak
+total_pareto_undominated_pne,312810.0,356107.0,Equilibria on the Pareto-undominated frontier
+mean_pne_active_hours,13.482678983833718,11.380886426592797,Mean PNE multiplicity during hours with active trade
+mean_pne_zero_trade_hours,342.66817155756206,343.0,Mean PNE multiplicity during zero-trade hours (trivial indifference)

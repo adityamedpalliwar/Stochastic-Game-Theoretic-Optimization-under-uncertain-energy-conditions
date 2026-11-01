@@ -1,0 +1,7 @@
+# Model Training and Retraining Environment Requirements
+# Supported Python Versions: Python 3.10, 3.11
+# Note: TensorFlow 2.15 requires Python 3.10 or 3.11.
+
+-r requirements.txt
+tensorflow>=2.15.0,<2.17.0
+

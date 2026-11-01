@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deliverable 2: Strategic Bidding & Energy Optimization Dashboard</title>
+  <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+
+  <!-- Top Academic Navigation Header -->
+  <header class="app-header">
+    <div>
+      <div class="brand-title">Stochastic Game-Theoretic Renewable Energy Optimization</div>
+      <div class="brand-subtitle">Deliverable 2: Academic Research & Interactive Demonstration Web Dashboard</div>
+    </div>
+    <div class="header-badges">
+      <span class="badge badge-success">✓ 250 / 250 Tests Verified</span>
+      <span class="badge badge-info">Phase 8D Selection Integrated</span>
+      <span class="badge badge-success" title="Phase 8E stochastic expected-payoff Nash equilibrium engine active">Phase 8E Stochastic Nash Active</span>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="app-nav">
+    <button class="nav-tab active" data-target="pane-strategic">
+      Strategic Bidding & Auction Clearing <span class="tab-badge">Step 5</span>
+    </button>
+    <button class="nav-tab" data-target="pane-stochastic">
+      Stochastic Nash (Phase 8E) <span class="tab-badge" style="background:#059669;">Active</span>
+    </button>
+    <button class="nav-tab" data-target="pane-overview">Executive Overview</button>
+    <button class="nav-tab" data-target="pane-forecasting">Forecasting & Uncertainty</button>
+    <button class="nav-tab" data-target="pane-p2p">P2P Market & Liquidity</button>
+    <button class="nav-tab" data-target="pane-ledger">Precomputed Ledger & Audit</button>
+  </nav>
+
+  <!-- Main Content Container -->
+  <main class="main-content">
+
+    <!-- ==================================================================== -->
+    <!-- TAB PANE: STRATEGIC BIDDING & AUCTION CLEARING (HERO SECTION)       -->
+    <!-- ==================================================================== -->
+    <div id="pane-strategic" class="tab-pane active">
+
+      <!-- Section Title & Scope Notice -->
+      <div class="section-header">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <h1 class="section-title">Strategic Bidding & Auction Clearing</h1>
+            <p class="section-desc">
+              Visual exploration of Phase 8D Pure Nash Equilibrium price profiles, midpoint bilateral double auction clearing, and prosumer incremental benefits.
+            </p>
+          </div>
+          <div style="text-align:right;">
+            <div id="market-hour-status" class="badge badge-success">TRADED HOUR</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+              Action Grid $\mathcal{P} = \{0.08, 0.12, 0.16, 0.19, 0.22, 0.26, 0.30\}$ AUD/kWh ($K=7$)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error & Loading Banners -->
+      <div id="market-error-banner" class="alert-banner alert-banner-error" style="display:none;"></div>
+
+      <!-- Interactive Controls Card -->
+      <div class="control-card">
+        <div class="control-row">
+          <!-- Preset Hours -->
+          <div class="control-group" style="flex: 2; min-width: 320px;">
+            <span class="control-label">Quick Presets (Tradeable vs. No-Trade Hours)</span>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+              <button class="btn-preset active" data-timestamp="2013-04-19 00:00:00">Tradeable #1 (00:00)</button>
+              <button class="btn-preset" data-timestamp="2013-04-19 02:00:00">Tradeable #2 (02:00)</button>
+              <button class="btn-preset" data-timestamp="2013-04-19 13:00:00">Midday Trade (13:00)</button>
+              <button class="btn-preset" data-timestamp="2013-04-19 08:00:00">No-Trade (All-Seller)</button>
+              <button class="btn-preset" data-timestamp="2013-04-19 06:00:00">No-Trade (All-Buyer)</button>
+            </div>
+          </div>
+
+          <!-- Tradeable Hours Dropdown -->
+          <div class="control-group" style="flex: 1.5; min-width: 260px;">
+            <span class="control-label">Browse 866 Tradeable Hours</span>
+            <select id="tradeable-hours-select" class="select-input">
+              <option value="">Loading 866 tradeable hours...</option>
+            </select>
+          </div>
+
+          <!-- Custom Timestamp Input -->
+          <div class="control-group" style="flex: 1; min-width: 220px;">
+            <span class="control-label">Exact ISO Timestamp</span>
+            <div style="display:flex;gap:6px;">
+              <input type="text" id="custom-timestamp-input" class="text-input" value="2013-04-19 00:00:00" style="flex:1;">
+              <button id="btn-load-timestamp" class="btn-primary">Load</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Strategy Selector Row -->
+        <div class="strategy-pills-row">
+          <span class="control-label" style="align-self:center;margin-right:8px;">Phase 8D Selection Strategy:</span>
+          <button class="strategy-pill active" data-strategy="strat_a">Strategy A (Reference Heuristic)</button>
+          <button class="strategy-pill" data-strategy="strat_b">Strategy B (Seller-Favouring)</button>
+          <button class="strategy-pill" data-strategy="strat_c">Strategy C (Buyer-Favouring)</button>
+          <button class="strategy-pill" data-strategy="strat_d">Strategy D (Max-Min Fair)</button>
+          <button class="strategy-pill" data-strategy="strat_e">Strategy E (Nash Social Welfare)</button>
+          <button class="strategy-pill" data-strategy="strat_f_05">Strategy F (Hybrid w=0.5)</button>
+          <span id="market-loading-spinner" class="loading-spinner" style="display:none;margin-left:auto;"></span>
+        </div>
+      </div>
+
+      <!-- Macroeconomic Financial Outcomes (Requirement 8) -->
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-volume">
+          <div class="kpi-title">Total P2P Volume</div>
+          <div class="kpi-value" id="kpi-traded-volume">0.0000 kWh</div>
+          <div class="kpi-sub">Total physical cleared energy</div>
+        </div>
+        <div class="kpi-card kpi-vwap">
+          <div class="kpi-title">VWAP Cleared Price</div>
+          <div class="kpi-value" id="kpi-vwap">$0.0000/kWh</div>
+          <div class="kpi-sub">Volume-weighted average price</div>
+        </div>
+        <div class="kpi-card kpi-welfare">
+          <div class="kpi-title">Community Welfare</div>
+          <div class="kpi-value" id="kpi-welfare">$0.0000</div>
+          <div class="kpi-sub">Exact social gain ($\Delta W = 0.22 \times Q$)</div>
+        </div>
+        <div class="kpi-card kpi-payment">
+          <div class="kpi-title">Total Buyer Payments</div>
+          <div class="kpi-value" id="kpi-buyer-payments">$0.0000</div>
+          <div class="kpi-sub">Bilateral payments $\sum b_j q_{ij}$</div>
+        </div>
+        <div class="kpi-card kpi-revenue">
+          <div class="kpi-title">Total Seller Revenues</div>
+          <div class="kpi-value" id="kpi-seller-revenues">$0.0000</div>
+          <div class="kpi-sub">Bilateral revenues $\sum a_i q_{ij}$</div>
+        </div>
+        <div class="kpi-card kpi-balance">
+          <div class="kpi-title">Payment-Revenue Residual</div>
+          <div class="kpi-value" id="kpi-balance-residual" style="font-size:16px;">$0.000000 AUD</div>
+          <div class="kpi-sub">Conservation identity verification</div>
+        </div>
+      </div>
+
+      <!-- Household Prosumer Cards (Requirement 5) -->
+      <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+        <h2 style="font-size:16px;font-weight:700;">Participating Household Orders & Strategic Offers</h2>
+        <span style="font-size:12px;color:var(--text-muted);">
+          Active Strategy: <strong id="active-strategy-title" style="color:var(--primary-blue);">Strategy A</strong>
+        </span>
+      </div>
+      <div id="prosumer-cards-container" class="prosumer-grid">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <!-- Double Auction Merit Order & Clearing Process (Requirement 6) -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-card-title">Double Auction Merit-Order Clearing Process</div>
+          <span class="badge badge-neutral">Midpoint Pricing: $p_{ij} = (a_i + b_j)/2$</span>
+        </div>
+        <div class="section-card-body">
+          <!-- Crossing Condition Banner -->
+          <div id="auction-crossing-banner" class="crossing-banner crossing-success">
+            Crossing status evaluated...
+          </div>
+
+          <!-- Side-by-side Merit Orders -->
+          <div class="auction-columns-grid">
+            <!-- Sellers Ascending -->
+            <div class="auction-column">
+              <div class="auction-column-title">
+                <span>SELLER ASKS (Sorted Ascending by Ask Price)</span>
+                <span class="badge badge-success">Lowest Ask Priority</span>
+              </div>
+              <div id="auction-sellers-list"></div>
+            </div>
+
+            <!-- Buyers Descending -->
+            <div class="auction-column">
+              <div class="auction-column-title">
+                <span>BUYER BIDS (Sorted Descending by Bid Price)</span>
+                <span class="badge badge-info">Highest Bid Priority</span>
+              </div>
+              <div id="auction-buyers-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bilateral Transaction Records (Requirement 7) -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-card-title">Bilateral Transaction Records</div>
+          <span class="badge badge-info">Step 4 Reconstructed Bilateral Clearing</span>
+        </div>
+        <div class="section-card-body" style="padding:0;">
+          <div id="transactions-empty-state" class="empty-state" style="display:none;">
+            <p style="font-weight:600;font-size:14px;color:var(--text-main);">No Transactions Executed</p>
+            <p style="font-size:12px;margin-top:4px;">In this hour, either no sellers and buyers coincided or bids did not cross asks (Volume = 0.0000 kWh, VWAP = N/A).</p>
+          </div>
+          <div id="transactions-table-wrapper" class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Transaction ID</th>
+                  <th>Seller</th>
+                  <th>Buyer</th>
+                  <th>Seller Ask</th>
+                  <th>Buyer Bid</th>
+                  <th>Clearing Price</th>
+                  <th>Matched Qty</th>
+                  <th>Seller Revenue</th>
+                  <th>Buyer Payment</th>
+                </tr>
+              </thead>
+              <tbody id="transactions-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 8D Strategy Choices Comparison (Requirement 3) -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-card-title">Phase 8D Social Choice Strategies Comparison (This Hour)</div>
+          <span style="font-size:12px;color:var(--text-muted);">Click any row to switch active clearing strategy</span>
+        </div>
+        <div class="section-card-body" style="padding:0;">
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Strategy Choice</th>
+                  <th>Price Profile $(p_1, p_2, p_3)$</th>
+                  <th>Traded Volume</th>
+                  <th>VWAP</th>
+                  <th>Community Welfare</th>
+                  <th>Payoffs $(U_1, U_2, U_3)$</th>
+                  <th>Gini Inequality</th>
+                </tr>
+              </thead>
+              <tbody id="strategies-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payoff Reconciliation: Stored vs Reconstructed (Requirement 9) -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-card-title">Payoff Reconciliation: Stored Phase 8D Payoffs vs. Reconstructed Transaction Benefits</div>
+          <span class="badge badge-success">Audit Verification: Exact Agreement</span>
+        </div>
+        <div class="section-card-body">
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Household</th>
+                  <th>Physical Role</th>
+                  <th>Stored Phase 8D Payoff ($U_i^{\text{stored}}$)</th>
+                  <th>Reconstructed Benefit ($U_i^{\text{recon}}$)</th>
+                  <th>Absolute Discrepancy $|\Delta|$</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="reconciliation-table-body"></tbody>
+            </table>
+          </div>
+          <div class="reconciliation-box">
+            <strong>Methodology & Proof:</strong>
+            Stored payoffs originate from the frozen <code>reports/phase8d_hourly_selection.csv</code> dataset. Reconstructed transaction benefits are verified in Step 4 by passing the stored selected strategy price vector $(p_1^*, p_2^*, p_3^*)$ into the existing clearing engine <code>clear_strategic_double_auction()</code> from <code>src/game/strategic_market.py</code> without re-running any Nash equilibrium solver. The zero discrepancy demonstrates complete mathematical and data-contract consistency.
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 8C Equilibrium Context (Requirement 10) -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-card-title">Phase 8C Pure Nash Equilibrium Context (Zero Recomputation)</div>
+          <span class="badge badge-neutral">Precomputed Frozen Artifact</span>
+        </div>
+        <div class="section-card-body">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:16px;">
+            <div style="background:#f8fafc;padding:12px;border-radius:6px;border:1px solid var(--border-light);">
+              <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Profiles Evaluated</div>
+              <div style="font-size:18px;font-weight:700;font-family:var(--font-mono);" id="ctx-profiles-evaluated">-</div>
+              <div style="font-size:11px;color:var(--text-muted);" id="ctx-profiles-sub">Combinatorial grid</div>
+            </div>
+            <div style="background:#f8fafc;padding:12px;border-radius:6px;border:1px solid var(--border-light);">
+              <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Deviations Evaluated</div>
+              <div style="font-size:18px;font-weight:700;font-family:var(--font-mono);" id="ctx-deviations-evaluated">-</div>
+              <div style="font-size:11px;color:var(--text-muted);" id="ctx-deviations-sub">Unilateral deviations</div>
+            </div>
+            <div style="background:#f8fafc;padding:12px;border-radius:6px;border:1px solid var(--border-light);">
+              <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Pure Nash Equilibria</div>
+              <div style="font-size:18px;font-weight:700;font-family:var(--font-mono);color:var(--primary-blue);" id="ctx-pne-count">0</div>
+              <div style="font-size:11px;color:var(--text-muted);">Total PNE discovered</div>
+            </div>
+            <div style="background:#f8fafc;padding:12px;border-radius:6px;border:1px solid var(--border-light);">
+              <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Strict PNE</div>
+              <div style="font-size:18px;font-weight:700;font-family:var(--font-mono);" id="ctx-strict-pne">0</div>
+              <div style="font-size:11px;color:var(--text-muted);">$u_i^* > u_i(s_i', s_{-i}^*)$</div>
+            </div>
+            <div style="background:#f8fafc;padding:12px;border-radius:6px;border:1px solid var(--border-light);">
+              <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Weak PNE</div>
+              <div style="font-size:18px;font-weight:700;font-family:var(--font-mono);" id="ctx-weak-pne">0</div>
+              <div style="font-size:11px;color:var(--text-muted);">$u_i^* \ge u_i(s_i', s_{-i}^*)$</div>
+            </div>
+            <div style="background:#f8fafc;padding:12px;border-radius:6px;border:1px solid var(--border-light);">
+              <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Pareto-Undominated PNE</div>
+              <div style="font-size:18px;font-weight:700;font-family:var(--font-mono);color:var(--seller-green);" id="ctx-pareto-pne">0</div>
+              <div style="font-size:11px;color:var(--text-muted);">Candidate set for Phase 8D</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">
+            <div><strong>Strategic Price Action Grid:</strong> <span id="ctx-price-grid" class="mono">[0.08, 0.12, 0.16, 0.19, 0.22, 0.26, 0.30] AUD/kWh (K=7)</span></div>
+            <div><strong>Clearing Source:</strong> <span id="ctx-transaction-source" class="mono">reconstructed_via_existing_clearing_function</span></div>
+            <div style="margin-top:6px;background:#ecfdf5;border:1px solid #a7f3d0;padding:8px 12px;border-radius:6px;color:#065f46;display:flex;justify-content:space-between;align-items:center;">
+              <span><strong>Phase 8E Stochastic Nash Active:</strong> Evaluate expected payoffs across 1,000 Monte Carlo scenarios.</span>
+              <button id="btn-jump-to-stochastic" class="btn-primary" style="padding:4px 10px;font-size:11px;">Switch to Stochastic View &rarr;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- TAB PANE: PHASE 8E STOCHASTIC EXPECTED-PAYOFF NASH EQUILIBRIUM       -->
+    <!-- ==================================================================== -->
+    <div id="pane-stochastic" class="tab-pane">
+
+      <!-- Section Title & Status Notice -->
+      <div class="section-header">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <h1 class="section-title">Phase 8E: Stochastic Expected-Payoff Nash Equilibrium</h1>
+            <p class="section-desc">
+              Game-theoretic energy trading under renewable forecast uncertainty. Evaluates 1,000 synchronized Monte Carlo demand/solar scenarios with non-anticipative battery dispatch.
+            </p>
+          </div>
+          <div style="text-align:right;">
+            <span class="stoch-badge-pill">✓ Stochastic Engine Active</span>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+              Ex-Ante Role-Conditioned Bidding (Option 1A)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modeling Explanation & Academic Disclosure Box -->
+      <div class="stoch-callout" style="margin-bottom:16px;">
+        <div style="font-weight:700;margin-bottom:4px;color:#1e3a8a;">Mathematical Modeling Formulation & Contract Specifications:</div>
+        <ul style="margin-left:18px;font-size:12px;line-height:1.7;">
+          <li><strong>Option 1A Seven-Price Bidding:</strong> Active prosumers choose 1 action from discrete grid $\mathcal{P} = \{0.08, 0.12, 0.16, 0.19, 0.22, 0.26, 0.30\}$ AUD/kWh (ASK if ex-ante seller, BID if ex-ante buyer).</li>
+          <li><strong>Option 2A Synchronized Uncertainty:</strong> 1,000 paired demand-solar scenarios generated via synchronized validation residual pool draws, preserving microgrid-wide weather correlation.</li>
+          <li><strong>Option 3A Frozen Battery Dispatch:</strong> Adopts authoritative Phase 7.1 Stochastic MPC first-stage decisions ($C_0, B_0$) fixed across all scenarios for that hour.</li>
+          <li><strong>Physical Role-Conflict Clamping:</strong> In scenarios where realized net flow opposes ex-ante role, the household submits no order ($q=0$). Inactive households submit no order.</li>
+          <li><strong>Expected Payoff Integration:</strong> Expected payoffs $\mathbb{E}[U_i(a)] = \frac{1}{M}\sum_{s=1}^M U_i(a, \omega_s)$ are averaged strictly across all 1,000 scenarios (denominator $M=1,000$).</li>
+          <li><strong>Academic Disclosure:</strong> This is a restricted ex-ante role-conditioned game, <em>not</em> a full two-sided contingent bidding game. For zero-trade hours, all 343 profiles yield identical zero payoffs and form weak equilibria.</li>
+        </ul>
+      </div>
+
+      <!-- Error & Loading Banners -->
+      <div id="stoch-error-banner" class="alert-banner alert-banner-error" style="display:none;"></div>
+
+      <!-- Interactive Controls Card -->
+      <div class="control-card">
+        <div class="control-row">
+          <!-- Preset Hours -->
+          <div class="control-group" style="flex: 2; min-width: 320px;">
+            <span class="control-label">Representative Chronological Hours</span>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+              <button class="btn-preset active" data-stoch-ts="2013-05-15 11:00:00">Midday Peak (11:00)</button>
+              <button class="btn-preset" data-stoch-ts="2013-05-15 08:00:00">Morning Ramp (08:00)</button>
+              <button class="btn-preset" data-stoch-ts="2013-05-15 14:00:00">Afternoon (14:00)</button>
+              <button class="btn-preset" data-stoch-ts="2013-05-15 18:00:00">Evening Peak (18:00)</button>
+              <button class="btn-preset" data-stoch-ts="2013-05-15 02:00:00">Night Baseline (02:00)</button>
+            </div>
+          </div>
+
+          <!-- Custom Timestamp Input -->
+          <div class="control-group" style="flex: 1.2; min-width: 240px;">
+            <span class="control-label">Target ISO Timestamp</span>
+            <div style="display:flex;gap:6px;">
+              <input type="text" id="stoch-timestamp-input" class="text-input" value="2013-05-15 11:00:00" style="flex:1;">
+              <button id="btn-stoch-calculate" class="btn-primary" style="white-space:nowrap;">
+                ⚡ Calculate Equilibrium
+              </button>
+            </div>
+          </div>
+
+          <!-- Loading Indicator -->
+          <div class="control-group" style="flex: 0.5; min-width: 120px; justify-content:center; align-items:center;">
+            <span id="stoch-loading-spinner" class="loading-spinner" style="display:none;"></span>
+            <span id="stoch-loading-label" style="font-size:11px;color:var(--text-muted);display:none;">Solving 343k clearings...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Macroeconomic Financial Outcomes KPI Grid (Requirement 3.B) -->
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-volume">
+          <div class="kpi-title">Expected Traded Energy</div>
+          <div class="kpi-value" id="stoch-kpi-traded">0.0000 kWh</div>
+          <div class="kpi-sub">$\mathbb{E}[Q_{\text{trade}}]$ across 1,000 scenarios</div>
+        </div>
+        <div class="kpi-card kpi-welfare">
+          <div class="kpi-title">Expected Community Welfare</div>
+          <div class="kpi-value" id="stoch-kpi-welfare">$0.0000 AUD</div>
+          <div class="kpi-sub">$\mathbb{E}[W] = 0.22 \times \mathbb{E}[Q_{\text{trade}}]$ verified</div>
+        </div>
+        <div class="kpi-card kpi-vwap">
+          <div class="kpi-title">Expected VWAP Price</div>
+          <div class="kpi-value" id="stoch-kpi-vwap">$0.0000/kWh</div>
+          <div class="kpi-sub">$\mathbb{E}[V] / \mathbb{E}[Q]$ transaction weighted</div>
+        </div>
+        <div class="kpi-card kpi-payment">
+          <div class="kpi-title">Tradeable Scenarios</div>
+          <div class="kpi-value" id="stoch-kpi-tradeable">0 / 1000</div>
+          <div class="kpi-sub" id="stoch-kpi-tradeable-pct">Active buyer & seller overlap</div>
+        </div>
+        <div class="kpi-card kpi-revenue">
+          <div class="kpi-title">Stochastic Pure Nash Eq.</div>
+          <div class="kpi-value" id="stoch-kpi-pne" style="color:var(--primary-blue);">0 PNE</div>
+          <div class="kpi-sub" id="stoch-kpi-pne-sub">0 Strict, 0 Weak, 0 Pareto</div>
+        </div>
+        <div class="kpi-card kpi-balance">
+          <div class="kpi-title">Selected Price Profile</div>
+          <div class="kpi-value" id="stoch-kpi-profile" style="font-size:14px;">-</div>
+          <div class="kpi-sub">5-step representative selection</div>
+        </div>
+      </div>
+
+      <!-- Participating Household Overviews & Role Frequencies (Requirement 3.A) -->
+      <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+        <h2 style="font-size:16px;font-weight:700;">Participating Household Ex-Ante Roles & Scenario Distributions</h2>
+        <span style="font-size:12px;color:var(--text-muted);">
+          Synchronized Monte Carlo Realizations: <strong>1,000 Scenarios</strong>
+        </span>
+      </div>
+      <div id="stoch-prosumer-cards-container" class="prosumer-grid" style="margin-bottom:20px;">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <!-- Side-by-Side Comparison: Deterministic (Phase 8C) vs Stochastic (Phase 8E) (Requirement 3.D) -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-card-title">Deterministic Ex-Post (Phase 8C) vs. Stochastic Expected (Phase 8E) Side-by-Side Comparison</div>
+          <span class="badge badge-info">Jensen's Inequality & Uncertainty Quantification</span>
+        </div>
+        <div class="section-card-body">
+          <div class="comparison-card-grid" id="stoch-comp-cards-grid">
+            <!-- Injected via JS -->
+          </div>
+
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Performance Metric</th>
+                  <th>Phase 8C Deterministic Ex-Post</th>
+                  <th>Phase 8E Stochastic Expected ($M=1,000$)</th>
+                  <th>Absolute Difference</th>
+                  <th>Relative Difference (%)</th>
+                  <th>Uncertainty Impact / Jensen Effect</th>
+                </tr>
+              </thead>
+              <tbody id="stoch-comparison-table-body">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="stoch-callout" style="margin-top:14px;">
+            <strong>Jensen's Inequality Impact:</strong>
+            Because peer-to-peer double auction clearing relies on the concave minimum matching operator $Q = \min(S, D)$, mathematical expectation yields $\mathbb{E}[\min(S, D)] \le \min(\mathbb{E}[S], \mathbb{E}[D])$. Forecast variance across the 1,000 Monte Carlo scenarios combined with role-conflict order clamping results in reduced expected cleared energy compared to assuming perfect certainty.
+          </div>
+        </div>
+      </div>
+
+      <!-- Pareto-Undominated Stochastic Equilibria (Requirement 3.C) -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-card-title">Pareto-Undominated Stochastic Pure Nash Equilibria</div>
+          <span class="badge badge-success" id="stoch-pareto-badge">Candidate Selection Frontier</span>
+        </div>
+        <div class="section-card-body" style="padding:0;">
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Equilibrium Status</th>
+                  <th>Price Profile $(p_1, p_2, p_3)$</th>
+                  <th>Expected Traded Volume</th>
+                  <th>Expected Community Welfare</th>
+                  <th>Expected VWAP</th>
+                  <th>Expected Payoffs $(U_1, U_2, U_3)$</th>
+                  <th>Classification</th>
+                </tr>
+              </thead>
+              <tbody id="stoch-pareto-table-body">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full Expected Payoff Combinatorial Table (Requirement 3.E) -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-card-title">Combinatorial Expected Payoff Matrix ($7^3 = 343$ Strategy Profiles)</div>
+          <span style="font-size:12px;color:var(--text-muted);">
+            Precomputed expected payoffs averaged over all 1,000 scenarios
+          </span>
+        </div>
+        <div class="section-card-body" style="padding:0;">
+          <div class="payoff-table-scrollable">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Profile Index</th>
+                  <th>H001 Price (AUD)</th>
+                  <th>H002 Price (AUD)</th>
+                  <th>H003 Price (AUD)</th>
+                  <th>$\mathbb{E}[U_{\text{H001}}]$ (AUD)</th>
+                  <th>$\mathbb{E}[U_{\text{H002}}]$ (AUD)</th>
+                  <th>$\mathbb{E}[U_{\text{H003}}]$ (AUD)</th>
+                  <th>Expected Traded (kWh)</th>
+                  <th>Expected Welfare (AUD)</th>
+                  <th>Expected VWAP (AUD)</th>
+                </tr>
+              </thead>
+              <tbody id="stoch-payoff-table-body">
+                <tr><td colspan="10" style="text-align:center;padding:20px;">Click 'Calculate Equilibrium' to populate expected payoff table...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- ==================================================================== -->
+    <!-- TAB PANE: EXECUTIVE OVERVIEW                                         -->
+    <!-- ==================================================================== -->
+    <div id="pane-overview" class="tab-pane">
+      <div class="section-header">
+        <h1 class="section-title">Executive Overview & Microgrid System Status</h1>
+        <p class="section-desc">Audited customer profiles, Ausgrid data provenance, and system verification status.</p>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-volume">
+          <div class="kpi-title">Regression Verification</div>
+          <div class="kpi-value" id="overview-test-badge" style="font-size:18px;">250 / 250 Passing</div>
+          <div class="kpi-sub">100% test pass rate across 10 test modules</div>
+        </div>
+        <div class="kpi-card kpi-vwap">
+          <div class="kpi-title">Test Horizon Duration</div>
+          <div class="kpi-value" id="overview-test-hours">1,752 Hours</div>
+          <div class="kpi-sub">73-day out-of-sample evaluation period</div>
+        </div>
+        <div class="kpi-card kpi-welfare">
+          <div class="kpi-title">Prosumer Households</div>
+          <div class="kpi-value">3 Prosumers</div>
+          <div class="kpi-sub">H001 (5kW PV), H002 (3kW PV), H003 (No PV)</div>
+        </div>
+        <div class="kpi-card kpi-revenue">
+          <div class="kpi-title">Data Provenance</div>
+          <div class="kpi-value" style="font-size:16px;">Ausgrid 2012–2013</div>
+          <div class="kpi-sub">Preprocessed clean hourly panel</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <h2 style="font-size:16px;font-weight:700;margin-bottom:12px;">Customer Specifications</h2>
+        <div id="overview-profiles-container" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- TAB PANE: FORECASTING & UNCERTAINTY                                  -->
+    <!-- ==================================================================== -->
+    <div id="pane-forecasting" class="tab-pane">
+      <div class="section-header">
+        <h1 class="section-title">Deep Learning Forecasting & Uncertainty Quantification</h1>
+        <p class="section-desc">Honest model comparison between Deep LSTM and Persistence baselines, with 90% Monte Carlo prediction intervals.</p>
+      </div>
+
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-card-title">Point Forecast Evaluation Scorecard</div>
+        </div>
+        <div class="section-card-body" style="padding:0;">
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Household</th>
+                  <th>Target Variable</th>
+                  <th>Model Architecture</th>
+                  <th>Mean Absolute Error (MAE)</th>
+                  <th>Root Mean Squared Error (RMSE)</th>
+                </tr>
+              </thead>
+              <tbody id="forecast-scorecard-table-body">
+                <tr><td colspan="5" style="text-align:center;">Click tab to load forecast data...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- TAB PANE: P2P MARKET & LIQUIDITY                                    -->
+    <!-- ==================================================================== -->
+    <div id="pane-p2p" class="tab-pane">
+      <div class="section-header">
+        <h1 class="section-title">P2P Market Clearing & Microgrid Liquidity</h1>
+        <p class="section-desc">Phase 7.1 benchmarks: Standalone vs. P2P energy trading across 4 battery controllers.</p>
+      </div>
+
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-card-title">Community Macroeconomic Benchmarks (Phase 7.1)</div>
+        </div>
+        <div class="section-card-body" style="padding:0;">
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Battery Controller</th>
+                  <th>Mode</th>
+                  <th>Grid Import</th>
+                  <th>Grid Export</th>
+                  <th>P2P Traded</th>
+                  <th>Net Financial Cost</th>
+                </tr>
+              </thead>
+              <tbody id="p2p-benchmark-table-body">
+                <tr><td colspan="6" style="text-align:center;">Click tab to load benchmark data...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- TAB PANE: PRECOMPUTED LEDGER & AUDIT                                -->
+    <!-- ==================================================================== -->
+    <div id="pane-ledger" class="tab-pane">
+      <div class="section-header">
+        <h1 class="section-title">Precomputed Numerical Conservation Ledger & Audit</h1>
+        <p class="section-desc">Mathematical conservation identities verified to machine precision from Deliverable 1.</p>
+      </div>
+
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-card-title">Numerical Conservation Audit Scorecard</div>
+        </div>
+        <div class="section-card-body" style="padding:0;">
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Conservation Metric</th>
+                  <th>Precomputed Residual</th>
+                  <th>Governing Theoretical Identity</th>
+                  <th>Verification Audit Status</th>
+                </tr>
+              </thead>
+              <tbody id="ledger-table-body">
+                <tr><td colspan="4" style="text-align:center;">Click tab to load ledger data...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="/static/js/strategic_market.js"></script>
+</body>
+</html>
