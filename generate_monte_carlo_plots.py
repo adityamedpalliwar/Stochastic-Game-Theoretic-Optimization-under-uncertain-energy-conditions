@@ -30,7 +30,7 @@ def plot_comparisons(
     df_hourly: pd.DataFrame,
     fig_dir: Path,
 ) -> List[Path]:
-    """Generate and save 6 comprehensive publication-grade comparison plots."""
+    """Generate and save 7 comprehensive publication-grade comparison plots."""
     fig_dir.mkdir(parents=True, exist_ok=True)
     saved_paths: List[Path] = []
 
@@ -399,6 +399,111 @@ def plot_comparisons(
     plt.savefig(p6_path, bbox_inches="tight")
     plt.close()
     saved_paths.append(p6_path)
+
+    # =========================================================================
+    # PLOT 7: Portion of Each Factor in Total Financial Savings (Solar, Battery, P2P)
+    # =========================================================================
+    fig, (ax_donut, ax_bar) = plt.subplots(1, 2, figsize=(16, 7.5), gridspec_kw={"width_ratios": [1, 1.4]})
+
+    comm_solar = solar_totals[-1]
+    comm_batt = batt_totals[-1]
+    comm_p2p = p2p_totals[-1]
+    comm_total = total_diff[-1]
+
+    factor_colors = ["#ff7f0e", "#1f77b4", "#2ca02c"]
+    factor_labels = [
+        f"Rooftop Solar PV\nSelf-Consumption\n${comm_solar:,.2f} ({comm_solar/comm_total*100:.1f}%)",
+        f"Battery Storage (BESS)\nPeak Arbitrage\n${comm_batt:,.2f} ({comm_batt/comm_total*100:.1f}%)",
+        f"P2P Market Trading\nCollaborative Surplus\n${comm_p2p:,.2f} ({comm_p2p/comm_total*100:.1f}%)",
+    ]
+
+    # Panel 1: Donut Chart of Community Total Portions
+    wedges, texts, autotexts = ax_donut.pie(
+        [comm_solar, comm_batt, comm_p2p],
+        explode=[0.02, 0.02, 0.08],
+        labels=factor_labels,
+        autopct="%1.1f%%",
+        pctdistance=0.72,
+        startangle=140,
+        colors=factor_colors,
+        wedgeprops=dict(width=0.45, edgecolor="black", linewidth=1.2),
+        textprops=dict(fontsize=9.5, fontweight="semibold"),
+    )
+    for at in autotexts:
+        at.set_fontsize(11)
+        at.set_fontweight("bold")
+        at.set_color("white")
+
+    # Center circle annotation in donut hole
+    ax_donut.text(
+        0, 0,
+        f"Total Community\nSavings:\n${comm_total:,.2f}\n(100%)",
+        ha="center",
+        va="center",
+        fontsize=11,
+        fontweight="bold",
+        color="#333333",
+    )
+    ax_donut.set_title(f"A. Community Total Savings Portion by Factor\n(Over {num_scenarios:,} Simulated Days)", fontweight="bold", pad=15)
+
+    # Panel 2: 100% Normalized Stacked Bar Chart across Households
+    solar_pct = (solar_totals / total_diff) * 100
+    batt_pct = (batt_totals / total_diff) * 100
+    p2p_pct = (p2p_totals / total_diff) * 100
+
+    bar_width = 0.55
+    indices = np.arange(len(entities))
+
+    b1 = ax_bar.bar(indices, solar_pct, bar_width, label="1. Rooftop Solar PV Self-Consumption", color="#ff7f0e", alpha=0.90, edgecolor="black", linewidth=0.8)
+    b2 = ax_bar.bar(indices, batt_pct, bar_width, bottom=solar_pct, label="2. Battery Storage Arbitrage (BESS)", color="#1f77b4", alpha=0.90, edgecolor="black", linewidth=0.8)
+    b3 = ax_bar.bar(indices, p2p_pct, bar_width, bottom=solar_pct + batt_pct, label="3. P2P Market Trading Surplus", color="#2ca02c", alpha=0.92, edgecolor="black", linewidth=0.8)
+
+    # Add text labels inside bars
+    for i in range(len(entities)):
+        # Solar label
+        sp = solar_pct[i]
+        sv = solar_totals[i]
+        if sp > 10:
+            ax_bar.text(i, sp / 2, f"{sp:.1f}%\n(${sv:,.0f})", ha="center", va="center", fontsize=8, fontweight="bold", color="white")
+        
+        # Battery label
+        bp = batt_pct[i]
+        bv = batt_totals[i]
+        if bp > 10:
+            ax_bar.text(i, sp + bp / 2, f"{bp:.1f}%\n(${bv:,.0f})", ha="center", va="center", fontsize=8, fontweight="bold", color="white")
+        
+        # P2P label
+        pp = p2p_pct[i]
+        pv = p2p_totals[i]
+        if pp >= 3.0:
+            ax_bar.text(i, sp + bp + pp / 2, f"{pp:.1f}%\n(${pv:,.0f})", ha="center", va="center", fontsize=8, fontweight="bold", color="white")
+        elif pp > 0.4:
+            ax_bar.annotate(
+                f"{pp:.1f}% (${pv:,.0f})",
+                xy=(i, 100),
+                xytext=(0, 6),
+                textcoords="offset points",
+                ha="center",
+                va="bottom",
+                fontsize=7.5,
+                fontweight="bold",
+                color="darkgreen",
+            )
+
+    ax_bar.set_title(f"B. Percentage Portion of Each Factor per Household (100% Normalized)\n(Highlighting How Energy Profiles Determine Factor Importance)", fontweight="bold", pad=15)
+    ax_bar.set_xlabel("Market Participant")
+    ax_bar.set_ylabel("Portion of Total Savings (%)")
+    ax_bar.set_xticks(indices)
+    ax_bar.set_xticklabels(display_names, rotation=15, ha="right", fontweight="semibold")
+    ax_bar.set_ylim(0, 112)
+    ax_bar.grid(True, alpha=0.25, axis="y")
+    ax_bar.legend(loc="upper right", framealpha=0.95, fontsize=9)
+
+    p7_path = fig_dir / "07_savings_portion_by_factor.png"
+    plt.tight_layout()
+    plt.savefig(p7_path, bbox_inches="tight")
+    plt.close()
+    saved_paths.append(p7_path)
 
     return saved_paths
 
