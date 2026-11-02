@@ -11,7 +11,7 @@ Implements:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 import numpy as np
 
@@ -182,3 +182,29 @@ class BatteryStorage:
             initial_charge_kwh=initial_charge,
             initial_soc=initial_soc,
         )
+
+
+def create_default_batteries(
+    player_ids: list[str],
+    capacity_kwh: float = 5.0,
+    max_charge_rate_kw: float = 2.5,
+    max_discharge_rate_kw: float = 2.5,
+    charge_efficiency: float = 0.95,
+    discharge_efficiency: float = 0.95,
+    min_soc: float = 0.10,
+    max_soc: float = 0.90,
+    initial_soc: float = 0.50,
+) -> Dict[str, BatteryStorage]:
+    return {
+        pid: BatteryStorage(
+            capacity_kwh=capacity_kwh,
+            max_charge_rate_kw=max_charge_rate_kw,
+            max_discharge_rate_kw=max_discharge_rate_kw,
+            charge_efficiency=charge_efficiency,
+            discharge_efficiency=discharge_efficiency,
+            min_soc=min_soc,
+            max_soc=max_soc,
+            initial_soc=initial_soc,
+        )
+        for pid in player_ids
+    }
