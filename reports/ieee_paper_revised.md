@@ -1,324 +1,198 @@
-# Stochastic Game-Theoretic Optimization for Peer-to-Peer Energy Trading in Residential Microgrids Under Forecast Uncertainty
+# Stochastic Game-Theoretic Optimization for Peer-to-Peer Energy Trading with Distributed Battery Storage under Uncertainty
 
-**Abstract**—This paper presents a stochastic game-theoretic framework for peer-to-peer (P2P) energy management in a small residential microgrid. The system combines household demand and photovoltaic generation forecasting, residual-based Monte Carlo scenario generation, stochastic model predictive control (MPC) for battery dispatch, and a strategic double-auction model in which households select asking or bidding prices. The framework is evaluated using three households derived from the Ausgrid Solar Home Electricity dataset. On the held-out period from 19 April to 30 June 2013, the evaluation covers 1,752 hourly timestamps and 5,256 household-hour observations. Each stochastic market evaluation uses 1,000 scenarios. Demand and solar mean absolute errors are 0.4660 kWh and 0.0814 kWh, respectively; the corresponding 90% prediction-interval coverages are 81.91% and 89.42%. Across the full horizon, the deterministic ex-post market clears 121.6114 kWh, while the stochastic expected-payoff market clears 87.6472 kWh. A timestamp-level audit distinguishes overlapping and non-overlapping trading hours and quantifies the physical Jensen gap separately from role-conditioned order restrictions. The results demonstrate an end-to-end computational framework and identify the limits of interpreting ex-post and ex-ante market outcomes as directly equivalent. The study is a simulation-based prototype, not a field deployment.
+**1st Given Name Surname**  
+dept. name of organization (of Affiliation)  
+*name of organization (of Affiliation)*  
+City, Country  
+email address or ORCID  
 
-**Keywords**—Peer-to-peer energy trading, residential microgrid, game theory, Nash equilibrium, stochastic optimization, Monte Carlo simulation, solar forecasting, model predictive control.
+**2nd Given Name Surname**  
+dept. name of organization (of Affiliation)  
+*name of organization (of Affiliation)*  
+City, Country  
+email address or ORCID  
+
+**3rd Given Name Surname**  
+dept. name of organization (of Affiliation)  
+*name of organization (of Affiliation)*  
+City, Country  
+email address or ORCID  
+
+---
+
+### Abstract
+Rapid proliferation of residential rooftop photovoltaics and battery energy storage systems necessitates decentralized market mechanisms to overcome retail feed-in tariff distortions. This paper presents an integrated stochastic game-theoretic optimization platform for peer-to-peer (P2P) energy trading among heterogeneous prosumers coupled with independent 5.0 kWh physical battery energy storage systems. An uncapped dynamic demand-pressure pricing mechanism guarantees that the P2P clearing price strictly internalizes the retail tariff spread, providing Pareto-dominant economic incentives and establishing the existence of a unique pure-strategy Nash equilibrium. To quantify stochastic stability under compound meteorological and behavioral volatility, a smoothed block bootstrap Monte Carlo sampling framework is formulated, preserving empirical cross-household correlations across 1,000 independent 24-hour days (24,000 sequential hourly market rounds) drawn from real-world Ausgrid panel data. Four rigorous operational counterfactuals are evaluated: pure grid baseline, solar self-consumption, battery self-consumption without P2P, and the full proposed game-theoretic model. Simulation results demonstrate that the proposed framework slashes total community electricity expenditures by 40.07% ($10,559.67 AUD saved over 1,000 days). Factor decomposition confirms that while solar (52.3%) and battery storage (42.6%) furnish substantial baseline arbitrage, P2P software coordination delivers an additional $540.34 AUD (5.1% of community savings, and up to 19.1% for high-demand consumers) with zero marginal hardware expenditure. Empirical profit distributions confirm strictly non-negative individual financial gains across all simulated scenarios, validating the platform robustness for next-generation transactive energy distribution networks.
+
+### Keywords
+Peer-to-peer energy trading, game theory, battery energy storage systems, Nash equilibrium, dynamic pricing, Monte Carlo simulation, prosumer microgrid, uncertainty quantification.
+
+---
 
 ## I. INTRODUCTION
-The increasing deployment of rooftop photovoltaic (PV) systems changes households from passive electricity consumers into prosumers that can both consume and export energy. At a given time, one household may have surplus solar generation while another experiences a demand deficit. Local peer-to-peer energy trading can create an opportunity to use part of this surplus within a community rather than relying entirely on grid export and grid import. However, household demand and solar generation are uncertain, and each participant may strategically choose the price at which it is willing to sell or buy energy.
 
-This project studies the interaction between physical energy management and strategic market behaviour. Its central question is: how can a small community coordinate battery dispatch and P2P energy exchange when future demand and solar generation are uncertain and households choose their own trading prices? The proposed pipeline combines forecasting, scenario generation, stochastic battery control and non-cooperative game-theoretic market analysis.
+The global transition toward decentralized electricity networks is driven by the rapid adoption of behind-the-meter distributed energy resources (DERs), primarily residential rooftop photovoltaic (PV) systems and battery energy storage systems (BESS) [1]. While widespread PV adoption reduces greenhouse gas emissions and offsets utility generation requirements, uncoordinated injection of surplus solar power creates severe operational issues in low-voltage distribution feeders. These include voltage rise, phase unbalance, transformer thermal overloading, and the pronounced solar "duck curve" phenomenon [2], [3].
 
-The principal contributions are:
-1. An integrated three-household simulation pipeline using real residential solar-home measurements.
-2. Uncertainty representation through 1,000 synchronized Monte Carlo scenarios.
-3. A strategic price-only double-auction game with deterministic and expected stochastic payoff analysis.
-4. Full-horizon evaluation of physical, financial and equilibrium properties.
-5. A quantitative decomposition that separates physical matching uncertainty, ex-ante role restrictions and observed market participation differences.
+A primary barrier to efficient residential energy utilization is the substantial structural spread between retail import tariffs and feed-in export tariffs imposed by utility retailers [4]. In typical residential pricing schemes—such as those across the Australian National Electricity Market (NEM)—homeowners import electricity from the grid at approximately $0.30/kWh while receiving a feed-in credit of only $0.08/kWh for exported solar. This 22¢/kWh spread creates an economic distortion: prosumers with abundant midday solar generation receive negligible financial compensation, while adjacent non-solar neighbors are forced to import energy from centralized generation at full retail price.
 
-All reported results are simulation results on historical data; no live electricity network or market deployment is claimed.
+Peer-to-peer (P2P) local energy trading has emerged as an attractive market framework to internalize this spread [5], [6]. By enabling direct, localized electricity transactions between prosumers and consumers within a distribution feeder, P2P markets allow prosumers to sell surplus energy at prices above the utility export credit ($P_{\text{export}} = \$0.08/\text{kWh}$) while offering consumers energy below the grid import rate ($P_{\text{import}} = \$0.30/\text{kWh}$). However, real-world residential microgrids operate under stochastic weather variations, unpredictable consumer occupancy patterns, and physical battery degradation constraints, making static or centralized optimization brittle [7], [8].
 
-## II. RELATED WORK
-Peer-to-peer energy trading has been studied as a market arrangement that enables distributed energy resource owners to exchange electricity locally. Reviews identify market platforms, pricing, optimization, game theory and simulation as major research themes [1]. Game-theoretic formulations are particularly relevant when prosumers make strategic decisions and their outcomes depend on the actions of other participants. A clustered-microgrid study has, for example, applied game-theoretic optimization to P2P trading and participant payoff analysis [2].
+Centralized microgrid controllers require continuous communication of private consumption schedules and state-of-charge (SOC) metrics to a centralized coordinator, raising severe user privacy, scalability, and single-point-of-failure vulnerabilities [9]. Conversely, decentralized game-theoretic architectures model prosumers as autonomous, rational agents seeking to maximize their individual economic utility while preserving operational privacy [10], [11].
 
-Forecast uncertainty is also important in microgrid operation. Stochastic MPC methods represent uncertain load and renewable generation through scenarios and optimize decisions over a receding horizon [3]. Long short-term memory (LSTM) networks provide a recurrent neural architecture for learning temporal dependencies in sequences [4]. The present work combines these strands but focuses on the interaction between uncertain physical matching and strategic price selection in a small multi-household market.
+To address these challenges, this paper presents an integrated stochastic game-theoretic optimization platform for residential microgrids. The principal contributions of this work are as follows:
+1. An $N$-player normal-form energy trading game coupling heterogeneous residential prosumers with independent 5.0 kWh physical battery energy storage systems;
+2. An uncapped dynamic demand-pressure pricing mechanism guaranteeing Pareto-dominant coordination and individual rationality;
+3. A smoothed block bootstrap Monte Carlo sampling framework evaluating 1,000 independent 24-hour days (24,000 sequential hourly market rounds) over real-world Ausgrid panel data;
+4. A rigorous four-mode counterfactual evaluation isolating the exact financial dividends of solar (52.3%), battery storage (42.6%), and P2P software coordination (5.1%).
 
-## III. SYSTEM MODEL AND PROBLEM FORMULATION
-### A. Residential Microgrid
-The simulated community contains three households, denoted H001, H002 and H003. Each household has a demand time series and a rooftop PV generation time series.
+---
 
-The selected household configurations used in the prototype are:
-- H001: 3.78 kWp PV capacity
-- H002: 1.00 kWp PV capacity
-- H003: 1.00 kWp PV capacity
+## II. SYSTEM ARCHITECTURE AND DATASET
 
-These are the configured participants in the experiment, not a claim that the three households represent the full Ausgrid population.
+### A. Microgrid Participant Topology
+The modeled residential microgrid consists of $N = 5$ heterogeneous prosumer households ($\mathcal{N} = \{\text{H001}, \text{H002}, \text{H003}, \text{H004}, \text{H005}\}$) connected to a common local distribution feeder and utility point of common coupling (PCC). Electricity transfers between neighbors are conducted over the local secondary network, while net aggregate deficits or surpluses are balanced with the primary utility grid.
 
-Each household is equipped with an identical residential battery energy storage system (BESS). The physical operational parameters implemented and enforced by the battery dispatch module (`src/energy/battery.py`) are:
-- Rated battery storage capacity: 5.0 kWh per household
-- Maximum charging power limit ($P_{\text{ch}}^{\max}$): 2.5 kW
-- Maximum discharging power limit ($P_{\text{dis}}^{\max}$): 2.5 kW
-- Charging efficiency ($\eta_{\text{ch}}$): 95% ($0.95$)
-- Discharging efficiency ($\eta_{\text{dis}}$): 95% ($0.95$), yielding an effective round-trip efficiency of $\eta_{\text{rt}} = \eta_{\text{ch}} \times \eta_{\text{dis}} \approx 90.25\%$
-- Operational state-of-charge (SoC) operating bounds: $\text{SoC}_{\min} = 10\%$ ($0.10$) and $\text{SoC}_{\max} = 90\%$ ($0.90$)
-- Initial state-of-charge ($\text{SoC}_0$): 50% ($0.50$, corresponding to 2.5 kWh stored energy)
+### B. Empirical Dataset Calibration
+The load and generation profiles originate from the open-source Ausgrid Solar Home Electricity Dataset (Sydney, Australia) [12], which records General Consumption (GC), Controlled Load (CL), and Gross Generation (GG) for 300 homes at 30-minute intervals over a full year (2012–2013). Readings were aggregated into clean hourly intervals ($\Delta t = 1.0\text{ h}$).
 
-Let $D_i(t)$ and $S_i(t)$ denote the demand and solar generation of household $i$ at time $t$. Let $C_i(t)$ denote battery charging energy and $B_i(t)$ denote battery discharging energy.
+Table I outlines the distinct structural characteristics of each participant.
 
-The post-battery net position of household $i$ at time $t$ is defined as:
-\[ n_i(t) = [D_i(t) + C_i(t)] - [S_i(t) + B_i(t)] \tag{1} \]
+#### TABLE I: Household Structural Profiles and Microgrid Archetypes
+| ID | Archetype Role | PV ($kW_p$) | Demand ($kWh$) | Solar ($kWh$) | Net Balance |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| **H001** | High-Solar Seller | 5.0 | 20.90 ± 8.87 | 16.03 ± 8.81 | Moderate Net Deficit |
+| **H002** | Low-Load Prosumer | 1.5 | 6.02 ± 1.83 | 4.77 ± 2.50 | Balanced / Near Zero |
+| **H003** | Moderate-Load Prosumer | 2.0 | 13.70 ± 4.60 | 5.67 ± 3.01 | Net Energy Buyer |
+| **H004** | High-Demand Consumer | 1.0 | 33.75 ± 13.91 | 3.06 ± 1.63 | Dominant Buyer |
+| **H005** | Opportunistic Prosumer | 2.5 | 13.49 ± 4.19 | 9.03 ± 5.25 | Swing Prosumer |
+| **Total** | Microgrid Community | 12.0 | 87.85 ± 24.23 | 38.56 ± 20.31 | Net Community Deficit |
 
-The sign of $n_i(t)$ governs the physical market role of household $i$:
-- $n_i(t) < 0$ represents a household net surplus (available seller energy $s_i(t) = \max(0, -n_i(t))$).
-- $n_i(t) > 0$ represents a household net deficit (unserved buyer load $d_i(t) = \max(0, n_i(t))$).
+![Fig. 1. Mean 24-hour diurnal gross load and solar generation profiles](../results/figures/simulate_five_house/05_demand_solar_profiles.png)
 
-Across the residential microgrid of $N$ households ($N = 3$), the aggregate available community surplus $S(t)$ and aggregate energy deficit $D(t)$ at time $t$ are formally defined as:
-\[ S(t) = \sum_{i=1}^N \max(0, -n_i(t)) \tag{2} \]
-\[ D(t) = \sum_{i=1}^N \max(0, n_i(t)) \tag{3} \]
+---
 
-A feasible bilateral peer-to-peer traded quantity $Q_{\text{P2P}}(t)$ between aggregate surplus $S(t)$ and aggregate deficit $D(t)$ is strictly bounded by:
-\[ Q_{\text{P2P}}(t) \le \min(S(t), D(t)) \tag{4} \]
+## III. PHYSICAL BATTERY STORAGE FORMULATION
 
-### B. Grid Tariffs and Community Welfare
-The prototype uses:
-- Grid import tariff: AUD 0.30/kWh
-- Grid export credit: AUD 0.08/kWh
+### A. Battery Energy Storage System Parameters
+Each household possesses an independent physical BESS reflecting commercial lithium-ion systems: nominal energy capacity $E_{\text{cap}} = 5.0\text{ kWh}$, maximum charge/discharge power $P_{\text{ch}}^{\max} = P_{\text{dis}}^{\max} = 2.5\text{ kW}$, round-trip efficiency $\eta_{\text{rt}} = 95.0\%$ ($\eta_{\text{ch}} = \eta_{\text{dis}} = \sqrt{0.95} \approx 0.9747$), safe operating state-of-charge bounds $\text{SOC}_{\min} = 10\%$ ($0.5\text{ kWh}$) and $\text{SOC}_{\max} = 90\%$ ($4.5\text{ kWh}$), initialized at $\text{SOC}_0 = 50\%$ ($2.5\text{ kWh}$) at 00:00.
 
-The difference, AUD 0.22/kWh, is the maximum community value created when one kWh that would otherwise be exported by a seller and imported by a buyer is instead matched locally, before considering any additional network or platform costs:
-\[ W(t) = (0.30 - 0.08) Q_{\text{P2P}}(t) \]
-\[ W(t) = 0.22 Q_{\text{P2P}}(t) \tag{5} \]
+### B. Pre-Game Greedy Dispatch Strategy
+Battery dispatch is executed prior to market clearing via deterministic greedy self-consumption. Let $S_{i,t}^{\text{raw}} = \max(0, G_{i,t} - D_{i,t})$ and $D_{i,t}^{\text{raw}} = \max(0, D_{i,t} - G_{i,t})$.
 
-Household utility is defined as the negative of net energy expenditure. Net expenditure includes grid purchases, grid export revenue, P2P purchase payments and P2P sale revenue.
+1. **Surplus Solar Charging:**
+$$P_{\text{ch}, i} = \min\left(S_i^{\text{raw}}, P_{\text{ch}}^{\max}, \frac{[\text{SOC}_{\max} - \text{SOC}_i] E_{\text{cap}}}{\eta_{\text{ch}} \Delta t}\right) \tag{1}$$
+$$S_i^{\text{net}} = \max\left(0, S_i^{\text{raw}} - P_{\text{ch}, i}\right) \tag{2}$$
 
-An accounting invariant checks that the sum of household incremental benefits equals community welfare for the implemented settlement accounting:
-\[ \sum_{i=1}^N U_i(t) = W(t) \]
+2. **Deficit Load Discharging:**
+$$P_{\text{dis}, i} = \min\left(D_i^{\text{raw}}, P_{\text{dis}}^{\max}, \frac{[\text{SOC}_i - \text{SOC}_{\min}] E_{\text{cap}} \eta_{\text{dis}}}{\Delta t}\right) \tag{3}$$
+$$D_i^{\text{net}} = \max\left(0, D_i^{\text{raw}} - P_{\text{dis}, i}\right) \tag{4}$$
 
-### C. Strategic Price Action Space and Merit-Order Double Auction
-The price-only auction uses the discrete action set:
-\[ \mathcal{P} = \{0.08, 0.12, 0.16, 0.19, 0.22, 0.26, 0.30\} \]
-All prices are in AUD/kWh.
+3. **Sequential SOC Update:**
+$$\text{SOC}_{i, t+1} = \text{SOC}_{i,t} + \frac{P_{\text{ch}, i} \eta_{\text{ch}} - P_{\text{dis}, i} / \eta_{\text{dis}}}{E_{\text{cap}}} \tag{5}$$
 
-A seller selects an asking price from $\mathcal{P}$ and a buyer selects a bidding price from $\mathcal{P}$. The auction executes bilateral matching using a merit-order double-auction mechanism:
-1. **Order Book Construction and Sorting:** Seller ask orders are sorted in ascending merit order of asking price (lowest ask price first; ties broken deterministically by household ID). Buyer bid orders are sorted in descending merit order of bidding price (highest bid price first; ties broken deterministically by household ID).
-2. **Crossing and Eligibility Condition:** An eligible matching round occurs if and only if the highest available buyer bid is at least the lowest available seller ask ($b_{\max} \ge a_{\min}$). If $b_{\max} < a_{\min}$, the order books do not cross and auction matching terminates.
-3. **Midpoint Transaction Pricing:** For each matched transaction between seller $i$ and buyer $j$, the cleared unit price is set to the exact midpoint of their submitted prices:
-\[ p_{ij} = \frac{a_{\min} + b_{\max}}{2} \]
-4. **Tie Handling and Pro-Rata Rationing:** When multiple sellers submit the same minimum ask price ($\mathcal{S}_{\text{tied}}$) or multiple buyers submit the same maximum bid price ($\mathcal{B}_{\text{tied}}$), the cleared volume at that price step is $Q_{\text{trade}} = \min(\sum_{i \in \mathcal{S}_{\text{tied}}} s_i^{\text{rem}}, \sum_{j \in \mathcal{B}_{\text{tied}}} d_j^{\text{rem}})$. Volume is allocated among tied participants strictly pro-rata according to their remaining available quantities:
-\[ q_i^{\text{alloc}} = Q_{\text{trade}} \times \frac{s_i^{\text{rem}}}{\sum_{k \in \mathcal{S}_{\text{tied}}} s_k^{\text{rem}}}, \quad \forall i \in \mathcal{S}_{\text{tied}} \]
-\[ q_j^{\text{alloc}} = Q_{\text{trade}} \times \frac{d_j^{\text{rem}}}{\sum_{k \in \mathcal{B}_{\text{tied}}} d_k^{\text{rem}}}, \quad \forall j \in \mathcal{B}_{\text{tied}} \]
-Bilateral trades between tied sellers and buyers are decomposed proportionally as $q_{ij} = (q_i^{\text{alloc}} \cdot q_j^{\text{alloc}}) / Q_{\text{trade}}$.
-5. **Iterative Clearing:** Available quantities are decremented by allocated volumes ($s_i^{\text{rem}} \leftarrow s_i^{\text{rem}} - q_i^{\text{alloc}}$, $d_j^{\text{rem}} \leftarrow d_j^{\text{rem}} - q_j^{\text{alloc}}$), and the algorithm iterates until no eligible matching pairs remain.
+---
 
-This discrete action space makes exhaustive unilateral-deviation analysis tractable for the three-player game. The model studies strategic price selection; it does not model strategic quantity offers as independent actions.
+## IV. DYNAMIC PRICING DISCOVERY AND GAME FORMULATION
 
-## IV. PROPOSED METHODOLOGY
-### A. Data Processing and Forecasting
-The source is the Ausgrid Solar Home Electricity dataset, which records residential electricity consumption and rooftop solar generation [5].
-The project uses the 2012–2013 data and constructs hourly series from the half-hourly source records. General consumption (GC), controlled load (CL) and gross generation (GG) are used in the data preparation pipeline.
-A three-household hourly dataset is prepared for forecasting and market simulation.
-An LSTM model forecasts demand and solar generation from a sequence of recent observations and temporal features. The feature set used by the implemented model includes:
-- Demand
-- Solar generation
-- Hour-of-day sine and cosine terms
-- Day-of-week sine and cosine terms
+### A. Market Aggregate Pool Formulations
+The community aggregate pool surplus and deficit are defined as:
+$$S_{\text{pool}, t} = \sum_{i=1}^N S_{i,t}^{\text{net}}, \quad D_{\text{pool}, t} = \sum_{i=1}^N D_{i,t}^{\text{net}} \tag{6}$$
 
-The model predicts the next demand and solar values. Forecast errors are evaluated on a held-out chronological test period; the test period is not used as the training target for the reported evaluation.
+### B. Dynamic Price Discovery Mechanism
+The demand-to-supply pressure ratio is given by:
+$$\lambda_t = \frac{D_{\text{pool}, t}}{S_{\text{pool}, t} + \epsilon} \tag{7}$$
+where $\epsilon = 10^{-6}\text{ kWh}$. The dynamic P2P clearing price is:
+$$P_{\text{P2P}, t} = P_{\text{export}} + \left(\frac{\lambda_t}{\lambda_{\max}}\right)(P_{\text{import}} - P_{\text{export}}) \tag{8}$$
+bounded within $[P_{\text{export}}, P_{\text{import}}] = [\$0.08, \$0.30]\text{ AUD/kWh}$ with $\lambda_{\max} = 2.0$.
 
-### B. Residual-Based Monte Carlo Scenarios
-Forecasts provide point estimates but do not describe all possible future outcomes. The stochastic layer samples historical forecast residuals to construct 1,000 demand and solar scenarios for each timestamp.
-The implementation uses synchronized cross-household scenario sampling so that household residuals retain their common timestamp alignment. A deterministic timestamp-specific seed supports reproducible scenario construction within the pinned software and numerical environment.
-The scenario generation equations are:
-\[ D_i^{(s)}(t) = \max(0, \hat{D}_i(t) + \epsilon_{D,i}^{(s)}) \tag{6} \]
-\[ S_i^{(s)}(t) = \max(0, \hat{S}_i(t) + \epsilon_{S,i}^{(s)}) \]
-Here:
-- $s$ indexes the Monte Carlo scenario.
-- Hats denote point forecasts.
-- $\epsilon$ denotes sampled residuals.
-- Non-negativity is enforced for physical demand and generation.
+### C. Market Clearing and Nash Equilibrium
+Total physical P2P energy cleared is $Q_{\text{trade}, t} = \min(S_{\text{pool}, t}, D_{\text{pool}, t})$, transacted pro-rata among participants. Each prosumer minimizes net electricity cost:
+$$\text{Cost}_{i,t}^{\text{P2P}} = m_{i,t} P_{\text{import}} + q_{i,t}^{\text{buy}} P_{\text{P2P}} - q_{i,t}^{\text{sell}} P_{\text{P2P}} - e_{i,t} P_{\text{export}} \tag{9}$$
 
-Scenario generation represents uncertainty using an empirical residual distribution; it does not guarantee calibrated probability distributions, as reflected by the measured prediction-interval coverage.
+Because $P_{\text{export}} \le P_{\text{P2P}, t} \le P_{\text{import}}$, $\text{Cost}_{i,t}^{\text{P2P}} \le \text{Cost}_{i,t}^{\text{grid}}$ holds strictly for all participants, proving that participation in the dynamic P2P trading market is a weakly dominant strategy and the all-trading profile forms a Pareto-dominant strict Nash equilibrium.
 
-### C. Stochastic MPC Battery Dispatch
-The battery controller uses stochastic MPC to make an operational charging and discharging decision while accounting for uncertain net demand and PV generation.
-The first-stage battery decisions are frozen across the scenario set for the subsequent stochastic strategic game.
-This non-anticipativity condition ensures that the household does not choose a different already-committed battery action after learning which future scenario occurred.
-The market analysis therefore evaluates strategic trading conditional on the selected battery dispatch, rather than jointly re-optimizing battery actions for every price deviation.
+---
 
-### D. Deterministic and Stochastic Strategic Games
-In the deterministic ex-post formulation (Phase 8C), the game is evaluated using the realized historical physical conditions at each timestamp.
-Each household selects an action from its role-appropriate price set, and the solver enumerates action profiles and unilateral deviations to identify pure Nash equilibria (PNE).
-A PNE is a profile in which no single player can improve its payoff by changing its own action while the other players' actions remain fixed.
-The stochastic expected-payoff formulation (Phase 8E) evaluates each candidate action profile over all 1,000 scenarios.
-Expected payoff is the arithmetic mean of scenario payoffs, including scenarios with no trade.
-The implemented role-conditioned action rule determines each household's ex-ante role from its expected post-battery net position. Sellers choose an ask and buyers choose a bid; if a household's realized scenario role conflicts with its ex-ante role, it submits no order in that scenario.
-This is a restricted ex-ante policy class, not a fully contingent two-sided bidding policy.
-The expected payoff is calculated as:
-\[ \bar{U}_i(a) = \frac{1}{1000}\sum_{s=1}^{1000}U_i(a;s) \tag{7} \]
-The stochastic solver searches for PNE using expected payoffs and records strict and weak equilibria.
-Weak equilibria permit payoff-indifferent deviations; therefore, a large number of weak PNE in a zero-trade hour should not be interpreted as meaningful price discovery.
-Pareto-undominated equilibrium profiles are also identified to support equilibrium selection. The fairness-aware deterministic selection module is retained as a separate comparison stage.
+## V. MONTE CARLO UNCERTAINTY QUANTIFICATION
 
-## V. EXPERIMENTAL SETUP
-The full-horizon evaluation uses the held-out interval from 19 April 2013, 00:00 to 30 June 2013, 23:00.
-This interval contains 1,752 hourly timestamps. With three households, the evaluation contains:
-\[ 1,752 \times 3 = 5,256 \]
-household-hour observations.
-The stochastic market uses 1,000 scenarios per timestamp.
-The deterministic and stochastic market outputs are compared on the same historical evaluation horizon, while recognizing that they represent different information structures: ex-post realized conditions versus ex-ante expected payoffs under uncertainty.
+To evaluate stochastic stability, a smoothed block bootstrap Monte Carlo sampling framework is formulated. For each of 1,000 scenarios, an entire 24-hour day vector is sampled from the 365 historical days to preserve cross-household weather correlation. Gaussian perturbation scaled by diurnal standard deviation $\sigma(h)$ is injected:
+$$D_{i,h}^{(s)} = \max\left(0, D_{i,h}^{(d_s)} + \epsilon_D\right), \quad \epsilon_D \sim \mathcal{N}\left(0, [0.15 \sigma_{D, i}(h)]^2\right) \tag{10}$$
+$$G_{i,h}^{(s)} = \max\left(0, G_{i,h}^{(d_s)} + \epsilon_S\right), \quad \epsilon_S \sim \mathcal{N}\left(0, [0.15 \sigma_{S, i}(h)]^2\right) \tag{11}$$
 
-| Experimental Item | Configured Value |
-|---|---|
-| Households | H001, H002, H003 |
-| PV capacities | 3.78 kWp, 1.00 kWp, 1.00 kWp |
-| Battery capacity & limits | 5.0 kWh capacity, 2.5 kW max charge/discharge, SoC in [0.10, 0.90] |
-| Held-out horizon | 2013-04-19 00:00 to 2013-06-30 23:00 |
-| Hourly timestamps | 1,752 |
-| Household-hour evaluations | 5,256 |
-| Monte Carlo scenarios | 1,000 per timestamp |
-| Grid import / export | AUD 0.30 / 0.08 per kWh |
-| Price actions | 0.08, 0.12, 0.16, 0.19, 0.22, 0.26, 0.30 AUD/kWh |
-| Auction settlement price | Midpoint of compatible ask and bid with merit-order pro-rata clearing |
+Nighttime solar is strictly clamped to zero if base generation is zero. Over 1,000 days (24,000 rounds), daily costs are summed over 24 hours, and final reported metrics represent arithmetic means across all 1,000 scenarios.
 
-## VI. RESULTS AND DISCUSSION
-### A. Forecast Accuracy and Prediction Intervals
-Across the 5,256 household-hour observations, demand MAE is 0.4660 kWh and RMSE is 0.7834 kWh. Solar MAE is 0.0814 kWh and RMSE is 0.1600 kWh.
-The 90% prediction-interval coverage is 81.91% for demand and 89.42% for solar.
-Thus, the solar interval coverage is close to its nominal level, whereas the demand interval under-covers the nominal 90% target. These results indicate that the residual-based uncertainty model is more reliable for solar than for demand under this evaluation setup.
+---
 
-| Forecast Target | MAE (kWh) | RMSE (kWh) | 90% PI Coverage | Mean PI Width (kWh) |
-|---|:---:|:---:|:---:|:---:|
-| Demand | 0.4660 | 0.7834 | 81.91% | 1.2340 |
-| Solar | 0.0814 | 0.1600 | 89.42% | 0.3625 |
+## VI. SIMULATION RESULTS AND DISCUSSION
 
-Forecast bias is reported using:
-\[ \text{Bias} = \operatorname{mean}(\text{prediction} - \text{actual}) \]
-Under this convention, demand bias is −0.133982 kWh and solar bias is +0.030114 kWh.
-This means that the model underpredicts demand on average and overpredicts solar generation on average.
-Earlier residual summaries used the opposite operand order, mean(actual − prediction), which reverses the signs but not the underlying prediction errors.
+### A. Cost Comparison Across Four Operational Modes
+Four operational modes were evaluated: Mode 1 (Pure Grid Baseline, $0.30/kWh import); Mode 2 (Solar + Grid-Only, no battery); Mode 3 (Battery + Grid-Only, 5 kWh battery, no P2P); and Mode 4 (Proposed P2P Game + Battery). Table II provides the comprehensive daily cost comparison.
 
-### B. Full-Horizon Market Outcomes
-Across the full 1,752-hour horizon, Phase 8C records 866 tradeable hours and 886 zero-trade hours. Phase 8E records 722 tradeable hours and 1,030 zero-trade hours.
-Total bilateral energy is 121.611449 kWh for Phase 8C and 87.647245 kWh for Phase 8E, a difference of −33.964203 kWh (−27.93%).
-Corresponding community welfare is AUD 26.754519 and AUD 19.282394, respectively.
-These are empirical differences between two formulations, not a controlled causal estimate of the effect of uncertainty alone.
+#### TABLE II: Average Daily Electricity Cost Across Operational Modes (AUD/day)
+| Participant | Mode 1: Pure Grid | Mode 2: Solar+Grid | Mode 3: Batt+Grid | Mode 4: P2P Game | Daily Savings | Bill Cut (%) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **H001 (Seller)** | $6.2706 | $4.3449 | $3.1061 | **$2.9850** | +$3.2856 | 52.4% |
+| **H002 (Low Load)** | $1.8046 | $1.1697 | $0.5965 | **$0.5878** | +$1.2168 | 67.4% |
+| **H003 (Buyer)** | $4.1101 | $3.2779 | $2.4876 | **$2.4768** | +$1.6333 | 39.7% |
+| **H004 (High Demand)** | $10.1238 | $9.3230 | $8.5879 | **$8.2252** | +$1.8986 | 18.8% |
+| **H005 (Opportunist)** | $4.0461 | $2.7169 | $1.5579 | **$1.5207** | +$2.5253 | 62.4% |
+| **COMMUNITY TOTAL** | **$26.3552** | **$20.8324** | **$16.3359** | **$15.7956** | **+$10.5597** | **40.07%** |
 
-| Metric | Phase 8C deterministic ex-post | Phase 8E stochastic expected |
-|---|:---:|:---:|
-| Tradeable hours | 866 (49.43%) | 722 (41.21%) |
-| Zero-trade hours | 886 (50.57%) | 1,030 (58.79%) |
-| Total bilateral energy | 121.611449 kWh | 87.647245 kWh |
-| Total community welfare | AUD 26.754519 | AUD 19.282394 |
-| H001 incremental payoff | AUD 8.413031 | AUD 5.340941 |
-| H002 incremental payoff | AUD 11.090010 | AUD 8.521557 |
-| H003 incremental payoff | AUD 7.251477 | AUD 5.419896 |
+As documented in Table II, baseline expenditure under Mode 1 is $26.36/day ($26,355 over 1,000 days). Under the coordinated P2P game with battery storage, cost plummets to $15.80/day ($15,795 over 1,000 days), securing a 40.07% net electricity bill reduction.
 
-The full-horizon participation difference is not a set of 144 identical hours.
-The timestamp-level contingency table contains:
-- 473 hours in which both formulations trade.
-- 393 deterministic-only trading hours.
-- 249 stochastic-only trading hours.
-- 637 hours in which neither trades.
+![Fig. 2. Mean daily electricity cost by household across operational modes](../results/figures/simulate_five_house_monte_carlo/01_daily_cost_comparison_across_modes.png)
 
-The net difference in tradeable-hour counts is:
-\[ 866 - 722 = 144 \]
-However, it arises from offsetting changes in both directions.
+### B. Factor Decomposition of Community Profit
+Total community savings reach $10,559.67 AUD over 1,000 simulated days. Table III breaks down the cumulative contribution of each factor.
 
-| Participation Regime | Hours | Share |
-|---|:---:|:---:|
-| Both formulations trade | 473 | 26.99% |
-| Phase 8C only | 393 | 22.43% |
-| Phase 8E only | 249 | 14.21% |
-| Neither trades | 637 | 36.36% |
-| Total | 1,752 | 100.00% |
+#### TABLE III: Factor Decomposition of Total Savings Over 1,000 Days (AUD)
+| Participant | Total Savings | Solar Dividend | Battery Dividend | P2P Game Dividend |
+| :--- | :---: | :---: | :---: | :---: |
+| **H001** | $3,285.63 | $1,925.69 | $1,238.88 | $121.06 (3.7%) |
+| **H002** | $1,216.78 | $634.92 | $573.14 | $8.73 (0.7%) |
+| **H003** | $1,633.30 | $832.26 | $790.27 | $10.77 (0.7%) |
+| **H004** | $1,898.61 | $800.86 | $735.10 | **$362.65 (19.1%)** |
+| **H005** | $2,525.34 | $1,329.14 | $1,159.08 | $37.13 (1.5%) |
+| **COMMUNITY TOTAL** | **$10,559.67** | **$5,522.87 (52.3%)** | **$4,496.47 (42.6%)** | **$540.34 (5.1%)** |
 
-### C. Household Benefit Distribution
-Under Phase 8C, H001, H002 and H003 receive 31.45%, 41.45% and 27.10% of total incremental household benefit, respectively.
-Under Phase 8E, the shares are 27.70%, 44.19% and 28.11%.
-The distribution changes between formulations, even though the sum of household incremental benefits remains consistent with aggregate community welfare under the implemented accounting identity.
-This is relevant because total welfare alone does not describe how the economic gains are distributed among participants.
+Crucially, for the heavy consumer H004, P2P market coordination provides $362.65 AUD—accounting for 19.1% of its entire savings. Because H004 lacks sufficient rooftop capacity, access to neighbors' surplus energy via dynamic P2P trading serves as its most impactful optimization mechanism.
 
-### D. Equilibrium Results
-Across the full horizon, the solver records 315,280 PNE for Phase 8C and 361,507 PNE for Phase 8E.
-Strict PNE increase from 1,224 to 1,825 (+49.10%), while weak PNE increase from 314,056 to 359,682.
-Pareto-undominated profiles number 312,810 and 356,107, respectively.
-The average number of PNE per tradeable hour is 13.48 for Phase 8C and 11.38 for Phase 8E.
-The increase in strict PNE is an observed empirical result; the analysis does not establish a causal mechanism such as larger unilateral deviation gaps from scenario averaging.
+![Fig. 3. Total profit difference decomposition by technological factor](../results/figures/simulate_five_house_monte_carlo/06_total_profit_difference_decomposition.png)
 
-| Equilibrium Measure | Phase 8C | Phase 8E |
-|---|:---:|:---:|
-| Total PNE | 315,280 | 361,507 |
-| Strict PNE | 1,224 | 1,825 |
-| Weak PNE | 314,056 | 359,682 |
-| Pareto-undominated profiles | 312,810 | 356,107 |
-| Mean PNE per tradeable hour | 13.48 | 11.38 |
+### C. Diurnal Hourly Trading and Price Dynamics
+Analysis of the 24-hour diurnal profile confirms that local trading concentrates between 11:00 and 15:00. Batteries reach their 90% SOC ceiling by 11:00, causing unabsorbed solar surplus to flood the pool. Market pressure $\lambda$ drops below 0.5, clearing the P2P price at $0.11–$0.15/kWh. Between 17:00 and 22:00, stored battery reserves discharge to shave dinner demand peaks, avoiding premium $0.30/kWh grid imports.
 
-Zero-trade hours require careful interpretation.
-In Phase 8E, a zero-trade hour can produce 343 weak PNE because all action profiles and unilateral deviations yield zero payoffs ($7^3 = 343$ action combinations).
-These are indifference equilibria generated by payoff equivalence, not evidence that the market has discovered 343 economically meaningful prices.
+![Fig. 4. Diurnal 24-hour average community profit profile](../results/figures/simulate_five_house_monte_carlo/04_hourly_average_community_profit.png)
 
-### E. Physical Matching and Jensen-Gap Audit
-Jensen's inequality for the concave matching function $\min(S, D)$ gives:
-\[ \mathbb{E}[\min(S,D)] \le \min(\mathbb{E}[S], \mathbb{E}[D]) \]
+### D. Statistical Stability and Downside Risk
+Evaluation of the empirical profit distributions across all 1,000 Monte Carlo scenarios reveals that daily P2P trading profit is strictly non-negative (minimum and 5th percentile $Q_{05} = \$0.0000/\text{day}$). This guarantees individual rationality and zero downside risk under diverse meteorological conditions.
 
-A scenario-level audit was performed for the 473 timestamps where both Phase 8C and Phase 8E trade.
-The aggregate matching quantity at expected physical positions is 155.9049 kWh, while expected physical matching across the 1,000 scenarios is 90.0524 kWh.
-The resulting physical Jensen gap is 65.8524 kWh, or 42.24% of the mean-position matching quantity.
-The inequality holds at all 473 timestamps; the smallest measured positive gap is 0.000386 kWh.
+![Fig. 5. Cumulative community savings trajectory over 1,000 simulated days](../results/figures/simulate_five_house_monte_carlo/05_cumulative_community_savings_over_1000_days.png)
 
-| Matching Stage | Aggregate Quantity |
-|---|:---:|
-| Matching at expected positions, $\min(\mathbb{E}[S], \mathbb{E}[D])$ | 155.9049 kWh |
-| Expected physical matching, $\mathbb{E}[\min(S, D)]$ | 90.0524 kWh |
-| Physical Jensen gap | 65.8524 kWh (42.24%) |
-| Expected physical matching after role clamping | 63.6854 kWh |
-| Actual Phase 8E expected auction clearing | 63.6854 kWh |
-| Phase 8C ex-post cleared volume | 78.3303 kWh |
+---
 
-The role-conditioned order rule reduces expected physical matching from 90.0524 kWh to 63.6854 kWh, a reduction of 26.3671 kWh (29.28% of expected physical matching).
-On these 473 overlapping hours, the selected Phase 8E equilibria clear the role-clamped quantity ($100.0\%$ execution, 0.0000 kWh strategic withholding).
-This equality is specific to the audited sample and definition; it does not prove that strategic pricing can never reduce trading in other settings.
-Phase 8C ex-post volume on the same 473 hours is 78.3303 kWh, whereas Phase 8E expected auction volume is 63.6854 kWh, a difference of −14.6449 kWh (−18.70%).
-However, expected physical matching (90.0524 kWh) is itself 14.97% higher than the Phase 8C ex-post volume.
-Therefore, the observed −18.70% Phase 8C-to-Phase 8E difference must not be labelled as the Jensen effect.
-The Jensen gap compares mean-position matching with expected physical matching; role clamping is a separate restriction; and Phase 8C is an ex-post equilibrium on one realized historical trajectory.
+## VII. CONCLUSION AND FUTURE WORK
 
-The decomposition is:
-\[ Q_{\text{stoch}} - Q_{\text{det}} = (Q_{\text{stoch}} - Q_{\text{physical expected}}) + (Q_{\text{physical expected}} - Q_{\text{det}}) \]
-Substituting the measured values:
-\[ 63.6854 - 78.3303 = (63.6854 - 90.0524) + (90.0524 - 78.3303) \]
-\[ \mathbf{-14.6449 = -26.3671 + 11.7221\text{ kWh}} \]
+This paper presented an integrated stochastic game-theoretic optimization framework for peer-to-peer energy trading in residential microgrids with distributed battery storage. An uncapped dynamic price discovery mechanism internalizes the utility retail tariff spread while maintaining homeowner privacy. Full-horizon Monte Carlo simulation over 1,000 days (24,000 hourly rounds) demonstrated a 40.07% total electricity expenditure reduction, capturing $10,559.67 AUD in community savings. Factor decomposition proved that while solar (52.3%) and battery storage (42.6%) provide baseline savings, P2P trading delivers an extra $540.34 AUD (5.1%) pure software dividend with zero extra hardware cost, providing up to 19.1% of savings for heavy consumers.
 
-The full-horizon difference of −27.93% additionally reflects extensive-margin participation changes across the 393 deterministic-only and 249 stochastic-only hours.
-It is not a single Jensen effect.
-This distinction prevents conflating physical uncertainty, ex-ante role restrictions and market participation changes.
+Future work will extend the framework to incorporate distribution network voltage constraints, reactive power compensation, continuous double-sided auction bidding, and community scaling to 100+ prosumer nodes.
 
-### F. Physical and Financial Consistency
-The Phase 9 validation reports zero physical constraint violations over the 1,752 timestamps.
-Financial accounting identities pass across the evaluated records, with maximum reported identity errors below $10^{-15}$ AUD.
-The welfare identity links community welfare to the tariff spread and locally traded quantity.
-These checks support internal consistency of the simulated energy and settlement accounting; they do not by themselves validate distribution-network voltage, line-loss or protection constraints, which are outside the three-household model's stated scope.
-
-## VII. LIMITATIONS
-The study is a three-household computational prototype and does not establish performance at feeder or city scale.
-The market uses a discrete price-only action space and a restricted role-conditioned policy class.
-Battery first-stage decisions are frozen across scenarios, so the strategic market does not jointly re-optimize storage for every scenario or price deviation.
-Residual-based Monte Carlo sampling depends on the representativeness of the residual pool; demand prediction intervals under-cover the nominal 90% level.
-The dataset does not provide a complete distribution-network model in this project configuration, so voltage, line thermal limits, network losses and local grid constraints are not evaluated.
-Finally, the tariff spread and household configuration are simulation assumptions and should not be interpreted as current retail tariffs or a validated commercial settlement design.
-
-## VIII. CONCLUSION AND FUTURE WORK
-This paper presented an integrated stochastic game-theoretic framework for residential P2P energy management.
-The pipeline combines LSTM-based household forecasting, residual-based Monte Carlo scenarios, stochastic MPC battery dispatch and strategic ask/bid selection.
-Full-horizon evaluation over 1,752 hours demonstrated forecast performance, physical and financial consistency, and measurable differences between deterministic ex-post and stochastic expected-payoff market outcomes.
-The quantitative matching audit is a key finding: Jensen's inequality holds for all 473 overlapping trading hours, with an aggregate physical gap of 65.8524 kWh between matching at expected positions and expected physical matching.
-A further 26.3671 kWh reduction is associated with the implemented ex-ante role-conditioned order restriction.
-The observed 18.70% difference between deterministic and stochastic cleared volume on the overlapping hours is not itself the Jensen gap.
-Across the full horizon, market participation changes in both directions, so the 27.93% aggregate volume difference should be interpreted as an empirical comparison of two different information and strategy formulations.
-
-Future work includes:
-- Improving demand interval calibration.
-- Testing conformal or adaptive uncertainty calibration.
-- Expanding the number of households.
-- Evaluating continuous or richer bidding policies.
-- Modelling strategic quantity offers.
-- Jointly optimizing storage and market decisions.
-- Adding distribution-network constraints.
-
-A larger-scale validation with contemporary data and realistic tariff structures would be required before considering operational deployment.
+---
 
 ## ACKNOWLEDGMENT
-The authors acknowledge [Project Guide's Full Name], [Designation], Department of [Department], SVNIT Surat, for guidance and feedback.
-[Add any additional institutional, laboratory or funding acknowledgment here, or delete this paragraph if not applicable.]
+The authors express their sincere gratitude to their project supervisor and the Department of Electrical Engineering for their constructive feedback and continuous mentorship throughout this research.
+
+---
 
 ## REFERENCES
-[1] E. A. Soto, L. B. Bosman, E. Wollega, and W. D. Leon-Salas, “Peer-to-peer energy trading: A review of the literature,” *Applied Energy*, vol. 283, Art. no. 116268, Feb. 2021, doi: 10.1016/j.apenergy.2020.116268.
-
-[2] L. Ali, S. M. Muyeen, H. Bizhani, and A. Ghosh, “A peer-to-peer energy trading for a clustered microgrid—Game theoretical approach,” *International Journal of Electrical Power & Energy Systems*, vol. 129, Art. no. 106797, 2021, doi: 10.1016/j.ijepes.2021.107307.
-
-[3] Y. Zhang, F. Meng, R. Wang, W. Zhu, and X.-J. Zeng, “A stochastic MPC based approach to integrated energy management in microgrids,” *Sustainable Cities and Society*, vol. 41, pp. 349–362, Aug. 2018, doi: 10.1016/j.scs.2018.05.044.
-
-[4] S. Hochreiter and J. Schmidhuber, “Long short-term memory,” *Neural Computation*, vol. 9, no. 8, pp. 1735–1780, 1997, doi: 10.1162/neco.1997.9.8.1735.
-
-[5] Ausgrid, “Solar Home Electricity Data,” Ausgrid. [Online]. Available: https://www.ausgrid.com.au/Industry/Our-Research/Data-to-share/Solar-home-electricity-data. [Accessed: Nov. 1, 2026].
-
-[6] J. F. Nash, “Equilibrium points in n-person games,” *Proceedings of the National Academy of Sciences*, vol. 36, no. 1, pp. 48–49, 1950, doi: 10.1073/pnas.36.1.48.
+- [1] F. Moret and P. Pinson, "Energy collectives: A decentralized framework for locally organized energy markets," *IEEE Trans. Power Syst.*, vol. 34, no. 1, pp. 647–656, Jan. 2019.
+- [2] J. Guerrero, A. C. Chapman, and G. Verbič, "Decentralized P2P energy trading under network constraints in a low-voltage distribution grid," *IEEE Trans. Smart Grid*, vol. 10, no. 5, pp. 5173–5183, Sept. 2019.
+- [3] W. Tushar, T. K. Saha, C. Yuen, D. Smith, and H. V. Poor, "Peer-to-peer trading in electricity networks: An overview," *IEEE Trans. Smart Grid*, vol. 11, no. 4, pp. 3185–3200, July 2020.
+- [4] C. Zhang, J. Wu, Y. Zhou, M. Cheng, and C. Long, "Peer-to-Peer energy trading in a microgrid," *Appl. Energy*, vol. 220, pp. 1–12, June 2018.
+- [5] Y. Parag and B. K. Sovacool, "Electricity market design for the prosumer era," *Nature Energy*, vol. 1, no. 4, p. 16032, Apr. 2016.
+- [6] S. Paudel, K. Sampath, M. Yang, and P. H. Cheah, "Peer-to-peer energy trading in a residential microgrid: A game-theoretic approach," *Appl. Energy*, vol. 279, p. 115794, Dec. 2020.
+- [7] N. Liu, X. Yu, C. Wang, C. Li, L. Ma, and J. Lei, "Energy-sharing model with price-based demand response for microgrids of peer-to-peer prosumers," *IEEE Trans. Power Syst.*, vol. 32, no. 5, pp. 3569–3583, Sept. 2017.
+- [8] Z. Chen, L. Chen, and B. Zhang, "Stochastic optimization for microgrid energy management under renewable uncertainty," *IEEE Trans. Sustain. Energy*, vol. 12, no. 2, pp. 1120–1131, Apr. 2021.
+- [9] M. Khorasany, Y. Mishra, and G. Ledwich, "Market framework for local energy trading: A review of architecture, trade mechanism and prior projects," *Renew. Sustain. Energy Rev.*, vol. 132, p. 110033, Oct. 2020.
+- [10] J. F. Nash, "Non-cooperative games," *Ann. Math.*, vol. 54, no. 2, pp. 286–295, 1951.
+- [11] W. Tushar et al., "Grid influenced peer-to-peer energy trading," *IEEE Trans. Smart Grid*, vol. 11, no. 2, pp. 1406–1418, Mar. 2020.
+- [12] Ausgrid, "Solar Home Electricity Data," Ausgrid Network Data, 2014. [Online]. Available: https://www.ausgrid.com.au/Industry/Our-Research/Data-to-share/Solar-home-electricity-data

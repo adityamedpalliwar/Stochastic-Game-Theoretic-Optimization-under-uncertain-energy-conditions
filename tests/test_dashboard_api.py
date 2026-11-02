@@ -1,14 +1,20 @@
-"""Comprehensive integration tests for Deliverable 2 Flask API (`dashboard/app.py`).
+"""Integration tests for Flagship 5-Household Flask API (`dashboard/app.py`).
 
 Validates:
-1. All 12 REST API endpoints return HTTP 200 and uniform JSON schema.
-2. Input parameter validation and structured HTTP 400/404/405 error responses.
-3. CORS headers and JSON serialization safety.
-4. Read-only compliance (no data mutation, no solver execution).
+1. Root UI and Health endpoints.
+2. Static publication figure serving.
+3. System overview & customer profiles endpoints.
+4. Diurnal trajectory queries and household validation.
+5. 4 Counterfactual modes comparison endpoint.
+6. Scenario generation demo endpoint.
+7. Figures catalog endpoint.
+8. Error handling and CORS headers.
 """
 
-from typing import Generator
+from __future__ import annotations
+
 import pytest
+from flask import Flask
 from flask.testing import FlaskClient
 
 from dashboard.app import create_app
@@ -16,250 +22,128 @@ from dashboard.data_service import get_data_service
 
 
 @pytest.fixture(scope="module")
-def client() -> Generator[FlaskClient, None, None]:
-    """Flask test client fixture using shared singleton data service."""
+def app() -> Flask:
+    """Fixture providing initialized Flask app."""
     service = get_data_service()
     app = create_app(data_service=service)
     app.config["TESTING"] = True
-    with app.test_client() as client:
-        yield client
+    return app
+
+
+@pytest.fixture(scope="module")
+def client(app: Flask) -> FlaskClient:
+    """Fixture providing test client."""
+    return app.test_client()
 
 
 def test_root_endpoint(client: FlaskClient) -> None:
-    """Test GET / returns 200 and greeting metadata."""
+    """Validate root endpoint returns 200 HTML."""
     res = client.get("/")
     assert res.status_code == 200
-    data = res.get_json()
-    assert data["status"] == "success"
-    assert "version" in data["data"]
+    assert b"Stochastic Game-Theoretic Renewable Energy Optimization" in res.data
+
+
+def test_dashboard_ui_endpoint(client: FlaskClient) -> None:
+    """Validate /dashboard returns 200 HTML."""
+    res = client.get("/dashboard")
+    assert res.status_code == 200
+    assert b"5-Household" in res.data
 
 
 def test_health_endpoint(client: FlaskClient) -> None:
-    """Test GET /api/health returns 200 and healthy cache state."""
+    """Validate health check JSON."""
     res = client.get("/api/health")
     assert res.status_code == 200
-    data = res.get_json()
-    assert data["status"] == "success"
-    assert data["data"]["status"] == "healthy"
-    assert data["data"]["cache_initialized"] is True
-    assert data["data"]["read_only_mode"] is True
-    assert data["data"]["tests_passing"] == 250
+    body = res.get_json()
+    assert body["status"] == "success"
+    assert body["data"]["status"] == "healthy"
+    assert body["data"]["scenarios_evaluated"] == 1000
 
 
-def test_system_status_endpoint(client: FlaskClient) -> None:
-    """Test GET /api/system_status returns system horizons and 250 tests."""
-    res = client.get("/api/system_status")
+def test_system_overview_endpoint(client: FlaskClient) -> None:
+    """Validate system overview JSON response."""
+    res = client.get("/api/system_overview")
     assert res.status_code == 200
-    data = res.get_json()
-    assert data["status"] == "success"
-    sys_data = data["data"]
-    assert sys_data["regression_test_status"]["tests_passing"] == 250
-    assert sys_data["households"] == ["H001", "H002", "H003"]
-    assert sys_data["dataset_horizons"]["test_period_hours"] == 1752
+    body = res.get_json()
+    assert body["status"] == "success"
+    assert body["data"]["households_count"] == 5
+    assert abs(body["data"]["financial_outcomes"]["total_profit_1000d"] - 10559.67) < 1.0
 
 
 def test_customer_profiles_endpoint(client: FlaskClient) -> None:
-    """Test GET /api/customer_profiles returns 3 customer profiles."""
+    """Validate customer profiles endpoint returns all 5 houses."""
     res = client.get("/api/customer_profiles")
     assert res.status_code == 200
-    data = res.get_json()
-    assert data["status"] == "success"
-    profiles = data["data"]
-    assert len(profiles) == 3
-    assert profiles[0]["house_id"] == "H001"
-    assert profiles[0]["battery_capacity_kwh"] == 5.0
+    body = res.get_json()
+    assert body["status"] == "success"
+    assert len(body["data"]) == 5
 
 
-def test_forecast_data_endpoint(client: FlaskClient) -> None:
-    """Test GET /api/forecast_data with default and query parameters."""
-    # Default query
-    res = client.get("/api/forecast_data")
+def test_diurnal_trajectories_endpoint(client: FlaskClient) -> None:
+    """Validate diurnal trajectories endpoint."""
+    res = client.get("/api/diurnal_trajectories?house_id=H001")
     assert res.status_code == 200
-    data = res.get_json()
-    assert data["status"] == "success"
-    assert data["data"]["total_records"] == 1752
-
-    # Query with filters
-    res2 = client.get("/api/forecast_data?house_id=H002&limit=5")
-    assert res2.status_code == 200
-    data2 = res2.get_json()
-    assert data2["data"]["total_records"] == 5
-    assert data2["data"]["house_id"] == "H002"
+    body = res.get_json()
+    assert body["status"] == "success"
+    assert body["data"]["house_id"] == "H001"
+    assert len(body["data"]["hours"]) == 24
 
 
-def test_forecast_data_invalid_params(client: FlaskClient) -> None:
-    """Test GET /api/forecast_data handles invalid parameters cleanly."""
-    # Invalid house ID
-    res = client.get("/api/forecast_data?house_id=H999")
+def test_diurnal_trajectories_invalid_house(client: FlaskClient) -> None:
+    """Validate invalid household ID error handling."""
+    res = client.get("/api/diurnal_trajectories?house_id=INVALID")
     assert res.status_code == 400
-    data = res.get_json()
-    assert data["status"] == "error"
-    assert "Invalid house_id" in data["message"]
-
-    # Invalid negative limit
-    res2 = client.get("/api/forecast_data?limit=-10")
-    assert res2.status_code == 400
-    assert res2.get_json()["status"] == "error"
-
-    # Non-integer limit
-    res3 = client.get("/api/forecast_data?limit=abc")
-    assert res3.status_code == 400
-    assert res3.get_json()["status"] == "error"
+    body = res.get_json()
+    assert body["status"] == "error"
 
 
-def test_forecast_scorecard_endpoint(client: FlaskClient) -> None:
-    """Test GET /api/forecast_scorecard returns point and interval metrics."""
-    res = client.get("/api/forecast_scorecard")
+def test_modes_comparison_endpoint(client: FlaskClient) -> None:
+    """Validate 4 counterfactual modes endpoint."""
+    res = client.get("/api/modes_comparison")
     assert res.status_code == 200
-    data = res.get_json()
-    assert data["status"] == "success"
-    assert len(data["data"]["point_metrics"]) == 16
-    assert len(data["data"]["interval_metrics"]) == 8
-    assert "honest_assessment" in data["data"]
+    body = res.get_json()
+    assert body["status"] == "success"
+    assert len(body["data"]) == 6
 
 
-def test_battery_dispatch_endpoint(client: FlaskClient) -> None:
-    """Test GET /api/battery_dispatch with valid controller and options."""
-    res = client.get("/api/battery_dispatch?controller=Stochastic_MPC&house_id=H001&enable_p2p=true&limit=24")
+def test_scenario_generation_demo_endpoint(client: FlaskClient) -> None:
+    """Validate scenario generator demo endpoint."""
+    res = client.get("/api/scenario_generation_demo?house_id=H001&seed=42")
     assert res.status_code == 200
-    data = res.get_json()
-    assert data["status"] == "success"
-    assert data["data"]["total_records"] == 24
-    record = data["data"]["records"][0]
-    assert "battery_final_soc" in record
-    assert "charged_kwh" in record
-    assert "discharged_kwh" in record
+    body = res.get_json()
+    assert body["status"] == "success"
+    assert len(body["data"]["synthetic_scenarios"]) == 3
 
 
-def test_battery_dispatch_invalid_params(client: FlaskClient) -> None:
-    """Test GET /api/battery_dispatch returns 400 on invalid inputs."""
-    # Invalid controller
-    res = client.get("/api/battery_dispatch?controller=SuperController")
-    assert res.status_code == 400
-    assert res.get_json()["status"] == "error"
-
-    # Invalid house ID
-    res2 = client.get("/api/battery_dispatch?house_id=ALL")
-    assert res2.status_code == 400
-
-    # Invalid enable_p2p
-    res3 = client.get("/api/battery_dispatch?enable_p2p=maybe")
-    assert res3.status_code == 400
-
-
-def test_p2p_benchmarks_endpoint(client: FlaskClient) -> None:
-    """Test GET /api/p2p_benchmarks returns all 32 benchmark rows."""
-    res = client.get("/api/p2p_benchmarks")
+def test_figures_catalog_endpoint(client: FlaskClient) -> None:
+    """Validate publication figures catalog endpoint."""
+    res = client.get("/api/figures_catalog")
     assert res.status_code == 200
-    data = res.get_json()
-    assert data["status"] == "success"
-    assert len(data["data"]) == 32
+    body = res.get_json()
+    assert body["status"] == "success"
+    assert len(body["data"]) == 7
 
 
-def test_liquidity_metrics_endpoint(client: FlaskClient) -> None:
-    """Test GET /api/liquidity_metrics with and without filter."""
-    res = client.get("/api/liquidity_metrics")
+def test_serve_figure_endpoint(client: FlaskClient) -> None:
+    """Validate static publication figure serving."""
+    res = client.get("/figures/01_daily_cost_comparison_across_modes.png")
     assert res.status_code == 200
-    assert len(res.get_json()["data"]) == 4
-
-    res2 = client.get("/api/liquidity_metrics?controller=Stochastic_MPC")
-    assert res2.status_code == 200
-    assert len(res2.get_json()["data"]) == 1
-
-    # Invalid controller filter
-    res3 = client.get("/api/liquidity_metrics?controller=Unknown")
-    assert res3.status_code == 400
+    assert res.content_type.startswith("image/png")
 
 
-def test_tradeable_hours_endpoint(client: FlaskClient) -> None:
-    """Test GET /api/tradeable_hours returns 866 tradeable hours."""
-    res = client.get("/api/tradeable_hours")
-    assert res.status_code == 200
-    data = res.get_json()
-    assert data["status"] == "success"
-    assert len(data["data"]) == 866
-
-
-def test_nash_hour_endpoint(client: FlaskClient) -> None:
-    """Test GET /api/nash_hour with timestamp and hour_index."""
-    # Default (first tradeable hour)
-    res = client.get("/api/nash_hour")
-    assert res.status_code == 200
-    data = res.get_json()["data"]
-    assert "market_state" in data
-    assert "equilibria" in data
-
-    # By hour_index
-    res2 = client.get("/api/nash_hour?hour_index=0")
-    assert res2.status_code == 200
-    data2 = res2.get_json()["data"]
-    assert data2["timestamp"] == "2013-04-19 00:00:00"
-
-
-def test_nash_hour_invalid_params(client: FlaskClient) -> None:
-    """Test GET /api/nash_hour handles out-of-range index and unknown timestamp."""
-    # Out of range hour_index
-    res = client.get("/api/nash_hour?hour_index=2000")
-    assert res.status_code == 400
-
-    # Non-integer hour_index
-    res2 = client.get("/api/nash_hour?hour_index=hour_one")
-    assert res2.status_code == 400
-
-    # Unknown timestamp
-    res3 = client.get("/api/nash_hour?timestamp=2099-01-01%2000:00:00")
-    assert res3.status_code == 404
-
-
-def test_fairness_summary_endpoint(client: FlaskClient) -> None:
-    """Test GET /api/fairness_summary returns 13 strategies table."""
-    res = client.get("/api/fairness_summary")
-    assert res.status_code == 200
-    data = res.get_json()
-    assert data["status"] == "success"
-    assert len(data["data"]) == 13
-
-
-def test_fairness_hourly_endpoint(client: FlaskClient) -> None:
-    """Test GET /api/fairness_hourly with limit filter."""
-    res = client.get("/api/fairness_hourly?limit=10")
-    assert res.status_code == 200
-    data = res.get_json()
-    assert data["status"] == "success"
-    assert len(data["data"]) == 10
-
-
-def test_precomputed_ledger_endpoint(client: FlaskClient) -> None:
-    """Test GET /api/precomputed_ledger returns 250 tests and conservation verifications."""
-    res = client.get("/api/precomputed_ledger")
-    assert res.status_code == 200
-    data = res.get_json()
-    assert data["status"] == "success"
-    ledger = data["data"]
-    assert ledger["test_suite"]["passed_tests"] == 250
-    assert ledger["financial_accounting_invariants"]["verdict"] == "VERIFIED_ZERO_FINANCIAL_LEAKAGE"
+def test_serve_figure_not_found(client: FlaskClient) -> None:
+    """Validate 404 for nonexistent figure."""
+    res = client.get("/figures/nonexistent_plot.png")
+    assert res.status_code == 404
 
 
 def test_cors_headers(client: FlaskClient) -> None:
-    """Test that CORS headers are attached to responses."""
+    """Validate CORS headers are present on API responses."""
     res = client.get("/api/health")
     assert res.headers.get("Access-Control-Allow-Origin") == "*"
-    assert "GET" in res.headers.get("Access-Control-Allow-Methods", "")
-
-
-def test_not_found_endpoint(client: FlaskClient) -> None:
-    """Test 404 response on nonexistent route."""
-    res = client.get("/api/nonexistent_path")
-    assert res.status_code == 404
-    data = res.get_json()
-    assert data["status"] == "error"
 
 
 def test_method_not_allowed(client: FlaskClient) -> None:
-    """Test POST request on GET-only route returns 405."""
-    res = client.post("/api/health")
+    """Validate POST method rejection on read-only endpoints."""
+    res = client.post("/api/system_overview")
     assert res.status_code == 405
-    data = res.get_json()
-    assert data["status"] == "error"
-    assert "Method not allowed" in data["message"]
-
