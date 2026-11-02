@@ -336,6 +336,14 @@ def run_simulation(
             "Solar_Grid_Cost_AUD": solar_grid_cost,
             "Batt_Grid_Cost_AUD": batt_grid_cost,
             "Game_Cost_AUD": game_cost,
+            # 1,000-Day Total Financial Values (AUD)
+            "Total_Pure_Grid_Cost_1000d_AUD": gross_cost * num_scenarios,
+            "Total_Game_Cost_1000d_AUD": game_cost * num_scenarios,
+            "Total_Profit_1000d_AUD": profit_pure_series.sum(),
+            "Total_Solar_Profit_1000d_AUD": (gross_cost - solar_grid_cost) * num_scenarios,
+            "Total_Battery_Profit_1000d_AUD": (solar_grid_cost - batt_grid_cost) * num_scenarios,
+            "Total_P2P_Profit_1000d_AUD": profit_p2p_series.sum(),
+            "Bill_Reduction_Pct": ((gross_cost - game_cost) / gross_cost * 100) if gross_cost > 0 else 0.0,
             # Financial Savings / Profit vs Baselines ($/day & $/yr)
             "Savings_over_Pure_Grid_AUD": profit_pure_series.mean(),
             "Annual_Savings_over_Pure_Grid_AUD": profit_pure_series.mean() * 365.25,
@@ -396,34 +404,49 @@ def print_results(df_summary: pd.DataFrame, df_hourly: pd.DataFrame, num_scenari
     print(cost_table.to_string(index=False))
     print("-" * 98)
 
-    # Table 2: Financial Savings & P2P Profit vs Grid-Only Baselines
-    profit_comp_table = df_summary[[
-        "Entity", "Savings_over_Pure_Grid_AUD", "Annual_Savings_over_Pure_Grid_AUD",
-        "Savings_over_Solar_Grid_AUD", "Annual_Savings_over_Solar_Grid_AUD",
-        "P2P_Trading_Profit_AUD", "Annual_P2P_Trading_Profit_AUD",
+    # Table 2: Total Amount of Profit & Cost Difference (Baseline vs Smart P2P Game)
+    total_profit_table = df_summary[[
+        "Entity", "Total_Pure_Grid_Cost_1000d_AUD", "Total_Game_Cost_1000d_AUD",
+        "Total_Profit_1000d_AUD", "Savings_over_Pure_Grid_AUD",
+        "Annual_Savings_over_Pure_Grid_AUD", "Bill_Reduction_Pct",
     ]].copy()
-    profit_comp_table.columns = [
-        "Participant",
-        "Savings over Pure Grid ($/d)",
-        "Savings over Pure Grid ($/yr)",
-        "Savings over Solar Grid ($/d)",
-        "Savings over Solar Grid ($/yr)",
-        "P2P Trading Profit ($/d)",
-        "P2P Trading Profit ($/yr)",
+    total_profit_table.columns = [
+        "Participant", "Baseline Grid Cost", "P2P Game Cost",
+        "Total Profit (Diff)", "Daily Profit ($/d)",
+        "Annual Profit ($/yr)", "Bill Cut (%)",
     ]
-    for col in profit_comp_table.columns[1:]:
-        if "/yr" in col:
-            profit_comp_table[col] = profit_comp_table[col].map(lambda x: f"${x:9.2f}")
-        else:
-            profit_comp_table[col] = profit_comp_table[col].map(lambda x: f"${x:7.4f}")
+    for col in ["Baseline Grid Cost", "P2P Game Cost", "Total Profit (Diff)", "Annual Profit ($/yr)"]:
+        total_profit_table[col] = total_profit_table[col].map(lambda x: f"${x:10.2f}")
+    total_profit_table["Daily Profit ($/d)"] = total_profit_table["Daily Profit ($/d)"].map(lambda x: f"${x:7.4f}")
+    total_profit_table["Bill Cut (%)"] = total_profit_table["Bill Cut (%)"].map(lambda x: f"{x:5.1f}%")
 
-    print("\nTABLE 2: FINANCIAL SAVINGS & P2P PROFIT COMPARED TO GRID-ONLY BASELINES")
-    print("  - Savings over Pure Grid:  Money saved by (Solar + Battery + P2P) instead of buying 100% from grid")
-    print("  - Savings over Solar Grid: Extra money saved by adding (Battery + P2P) over solar-only grid imports")
-    print("  - P2P Trading Profit:      Extra profit earned specifically from neighbor P2P trading vs isolated battery")
-    print("-" * 98)
-    print(profit_comp_table.to_string(index=False))
-    print("-" * 98)
+    print(f"\nTABLE 2: TOTAL AMOUNT OF PROFIT & COST DIFFERENCE ({num_scenarios} SCENARIOS / DAYS)")
+    print("  - Baseline Grid Cost: Total cost if 100% electricity was bought from grid at $0.30/kWh (no solar/battery)")
+    print("  - P2P Game Cost:      Total cost paid under our proposed Solar + Battery + P2P Game")
+    print("  - Total Profit (Diff): DIRECT DIFFERENCE = Cash savings kept in homeowners' pockets over 1,000 days")
+    print("-" * 105)
+    print(total_profit_table.to_string(index=False))
+    print("-" * 105)
+
+    # Table 2B: Breakdown of the Total Profit by Source (Difference Decomposition)
+    source_table = df_summary[[
+        "Entity", "Total_Solar_Profit_1000d_AUD", "Total_Battery_Profit_1000d_AUD",
+        "Total_P2P_Profit_1000d_AUD", "Total_Profit_1000d_AUD",
+    ]].copy()
+    source_table.columns = [
+        "Participant", "Solar Self-Use Profit", "Battery Arbitrage",
+        "P2P Trading Profit", "TOTAL PROFIT",
+    ]
+    for col in source_table.columns[1:]:
+        source_table[col] = source_table[col].map(lambda x: f"${x:10.2f}")
+
+    print(f"\nTABLE 2B: TOTAL PROFIT BREAKDOWN BY CONTRIBUTING SOURCE ({num_scenarios} DAYS)")
+    print("  - Solar Self-Use:   Cost reduction from rooftop solar replacing expensive grid import")
+    print("  - Battery Arbitrage:Additional savings from storing surplus solar and discharging during peak")
+    print("  - P2P Trading:      Additional profit from selling/buying surplus energy with neighbors")
+    print("-" * 95)
+    print(source_table.to_string(index=False))
+    print("-" * 95)
 
     # Table 3: P2P Game Profit Distribution
     dist_table = df_summary[[
@@ -439,6 +462,7 @@ def print_results(df_summary: pd.DataFrame, df_hourly: pd.DataFrame, num_scenari
 
     print("\nTABLE 3: P2P GAME DAILY PROFIT DISTRIBUTION (UNCAPPED DYNAMIC PRICING)")
     print("-" * 98)
+    print(dist_table.to_string(index=False))
     print("-" * 98)
 
     # Table 4: Hourly breakdown of community profit
@@ -483,9 +507,13 @@ if __name__ == "__main__":
     # Save detailed numeric scenario results to CSV
     output_dir = PROJECT_ROOT / "results"
     output_dir.mkdir(parents=True, exist_ok=True)
+    tables_dir = output_dir / "tables"
+    tables_dir.mkdir(parents=True, exist_ok=True)
     summary_csv = output_dir / "monte_carlo_1000_scenarios_summary.csv"
+    summary_tables_csv = tables_dir / "monte_carlo_1000_scenarios_summary.csv"
     df_summary.to_csv(summary_csv, index=False)
-    print(f"Summary table saved to: {summary_csv}")
+    df_summary.to_csv(summary_tables_csv, index=False)
+    print(f"Summary table saved to: {summary_csv} and {summary_tables_csv}")
 
     # Generate and save comparison plots
     fig_dir = output_dir / "figures" / "simulate_five_house_monte_carlo"
