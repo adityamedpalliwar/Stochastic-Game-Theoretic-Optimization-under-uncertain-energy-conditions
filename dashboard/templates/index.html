@@ -3,652 +3,481 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Deliverable 2: Strategic Bidding & Energy Optimization Dashboard</title>
+  <title>5-Household Stochastic Energy Trading Platform — Interactive Research Dashboard</title>
   <link rel="stylesheet" href="/static/css/dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    /* Clean custom enhancements for beginner-friendly flagship dashboard */
+    .kpi-stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+    .pipeline-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 16px 0; }
+    .pipeline-card { background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 16px; position: relative; transition: transform 0.15s, box-shadow 0.15s; }
+    .pipeline-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .pipeline-step-badge { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 700; background: var(--primary-light); color: var(--primary-blue); margin-bottom: 8px; }
+    .pipeline-card-title { font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 6px; }
+    .pipeline-card-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+    .persona-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-top: 14px; }
+    .persona-card { background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 16px; border-top: 4px solid var(--primary-blue); }
+    .persona-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+    .persona-name { font-size: 15px; font-weight: 700; }
+    .persona-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: var(--bg-subtle); color: var(--text-muted); }
+    .persona-archetype { font-size: 12px; font-weight: 600; color: var(--primary-blue); margin-bottom: 8px; }
+    .persona-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 11px; background: var(--bg-primary); padding: 8px; border-radius: 6px; margin-top: 10px; }
+
+    .chart-container { position: relative; width: 100%; height: 340px; margin: 12px 0; }
+    .chart-container-sm { position: relative; width: 100%; height: 260px; margin: 12px 0; }
+    .callout-box { background: #eff6ff; border-left: 4px solid var(--primary-blue); padding: 12px 16px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; margin: 14px 0; font-size: 13px; line-height: 1.6; }
+    .callout-title { font-weight: 700; color: #1e3a8a; margin-bottom: 4px; }
+
+    .figure-card { background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 24px; box-shadow: var(--shadow-sm); }
+    .figure-card-img { width: 100%; max-height: 520px; object-fit: contain; background: #fafafa; border-bottom: 1px solid var(--border-light); display: block; }
+    .figure-card-body { padding: 18px 22px; }
+    .figure-card-title { font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 6px; }
+    .figure-card-takeaway { background: #ecfdf5; border-left: 4px solid var(--seller-green); padding: 10px 14px; border-radius: 0 6px 6px 0; margin-top: 10px; font-size: 12.5px; color: #065f46; line-height: 1.5; }
+
+    .house-pill-btn { padding: 6px 14px; border-radius: 9999px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border-medium); background: var(--bg-surface); color: var(--text-main); transition: all 0.15s; }
+    .house-pill-btn:hover { background: var(--bg-subtle); border-color: var(--primary-blue); }
+    .house-pill-btn.active { background: var(--primary-blue); color: #fff; border-color: var(--primary-blue); }
+
+    .waterfall-bar { display: flex; height: 26px; border-radius: 6px; overflow: hidden; margin: 12px 0; border: 1px solid var(--border-medium); font-size: 11px; font-weight: 600; color: #fff; text-align: center; line-height: 26px; }
+    .waterfall-solar { background: #ff7f0e; }
+    .waterfall-batt { background: #1f77b4; }
+    .waterfall-p2p { background: #2ca02c; }
+  </style>
 </head>
 <body>
 
-  <!-- Top Academic Navigation Header -->
+  <!-- ==================================================================== -->
+  <!-- Top Navigation Header                                                -->
+  <!-- ==================================================================== -->
   <header class="app-header">
     <div>
       <div class="brand-title">Stochastic Game-Theoretic Renewable Energy Optimization</div>
-      <div class="brand-subtitle">Deliverable 2: Academic Research & Interactive Demonstration Web Dashboard</div>
+      <div class="brand-subtitle">Flagship 5-Household (N=5) Microgrid Platform & Monte Carlo Simulation</div>
     </div>
     <div class="header-badges">
-      <span class="badge badge-success">✓ 250 / 250 Tests Verified</span>
-      <span class="badge badge-info">Phase 8D Selection Integrated</span>
-      <span class="badge badge-success" title="Phase 8E stochastic expected-payoff Nash equilibrium engine active">Phase 8E Stochastic Nash Active</span>
+      <span class="badge badge-success">✓ 1,000 Monte Carlo Scenarios</span>
+      <span class="badge badge-info">24,000 Market Rounds</span>
+      <span class="badge badge-success" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;">
+        $10,559.67 AUD Profit (40.1% Cut)
+      </span>
     </div>
   </header>
 
-  <!-- Navigation Tabs -->
+  <!-- ==================================================================== -->
+  <!-- App Navigation Tabs                                                  -->
+  <!-- ==================================================================== -->
   <nav class="app-nav">
-    <button class="nav-tab active" data-target="pane-strategic">
-      Strategic Bidding & Auction Clearing <span class="tab-badge">Step 5</span>
+    <button class="nav-tab active" data-target="pane-aim">
+      1. Project Aim & 4-Step Pipeline
     </button>
-    <button class="nav-tab" data-target="pane-stochastic">
-      Stochastic Nash (Phase 8E) <span class="tab-badge" style="background:#059669;">Active</span>
+    <button class="nav-tab" data-target="pane-scenarios">
+      2. Scenario & Trajectory Generation
     </button>
-    <button class="nav-tab" data-target="pane-overview">Executive Overview</button>
-    <button class="nav-tab" data-target="pane-forecasting">Forecasting & Uncertainty</button>
-    <button class="nav-tab" data-target="pane-p2p">P2P Market & Liquidity</button>
-    <button class="nav-tab" data-target="pane-ledger">Precomputed Ledger & Audit</button>
+    <button class="nav-tab" data-target="pane-battery">
+      3. Battery Dispatch & Dynamic Pricing
+    </button>
+    <button class="nav-tab" data-target="pane-modes">
+      4. Four Operational Modes & Savings
+    </button>
+    <button class="nav-tab" data-target="pane-gallery">
+      5. Publication Figures Gallery
+    </button>
   </nav>
 
-  <!-- Main Content Container -->
+  <!-- ==================================================================== -->
+  <!-- Main Content Container                                               -->
+  <!-- ==================================================================== -->
   <main class="main-content">
 
-    <!-- ==================================================================== -->
-    <!-- TAB PANE: STRATEGIC BIDDING & AUCTION CLEARING (HERO SECTION)       -->
-    <!-- ==================================================================== -->
-    <div id="pane-strategic" class="tab-pane active">
-
-      <!-- Section Title & Scope Notice -->
+    <!-- ================================================================== -->
+    <!-- TAB 1: PROJECT AIM & 4-STEP PIPELINE                               -->
+    <!-- ================================================================== -->
+    <div id="pane-aim" class="tab-pane active">
       <div class="section-header">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-          <div>
-            <h1 class="section-title">Strategic Bidding & Auction Clearing</h1>
-            <p class="section-desc">
-              Visual exploration of Phase 8D Pure Nash Equilibrium price profiles, midpoint bilateral double auction clearing, and prosumer incremental benefits.
-            </p>
-          </div>
-          <div style="text-align:right;">
-            <div id="market-hour-status" class="badge badge-success">TRADED HOUR</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
-              Action Grid $\mathcal{P} = \{0.08, 0.12, 0.16, 0.19, 0.22, 0.26, 0.30\}$ AUD/kWh ($K=7$)
-            </div>
-          </div>
-        </div>
+        <h1 class="section-title">Project Aim & Architectural Overview</h1>
+        <p class="section-desc">
+          How 5 prosumer households autonomously coordinate solar generation, battery energy storage, and dynamic peer-to-peer (P2P) trading to overcome utility grid retail spreads.
+        </p>
       </div>
 
-      <!-- Error & Loading Banners -->
-      <div id="market-error-banner" class="alert-banner alert-banner-error" style="display:none;"></div>
-
-      <!-- Interactive Controls Card -->
-      <div class="control-card">
-        <div class="control-row">
-          <!-- Preset Hours -->
-          <div class="control-group" style="flex: 2; min-width: 320px;">
-            <span class="control-label">Quick Presets (Tradeable vs. No-Trade Hours)</span>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;">
-              <button class="btn-preset active" data-timestamp="2013-04-19 00:00:00">Tradeable #1 (00:00)</button>
-              <button class="btn-preset" data-timestamp="2013-04-19 02:00:00">Tradeable #2 (02:00)</button>
-              <button class="btn-preset" data-timestamp="2013-04-19 13:00:00">Midday Trade (13:00)</button>
-              <button class="btn-preset" data-timestamp="2013-04-19 08:00:00">No-Trade (All-Seller)</button>
-              <button class="btn-preset" data-timestamp="2013-04-19 06:00:00">No-Trade (All-Buyer)</button>
-            </div>
-          </div>
-
-          <!-- Tradeable Hours Dropdown -->
-          <div class="control-group" style="flex: 1.5; min-width: 260px;">
-            <span class="control-label">Browse 866 Tradeable Hours</span>
-            <select id="tradeable-hours-select" class="select-input">
-              <option value="">Loading 866 tradeable hours...</option>
-            </select>
-          </div>
-
-          <!-- Custom Timestamp Input -->
-          <div class="control-group" style="flex: 1; min-width: 220px;">
-            <span class="control-label">Exact ISO Timestamp</span>
-            <div style="display:flex;gap:6px;">
-              <input type="text" id="custom-timestamp-input" class="text-input" value="2013-04-19 00:00:00" style="flex:1;">
-              <button id="btn-load-timestamp" class="btn-primary">Load</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Strategy Selector Row -->
-        <div class="strategy-pills-row">
-          <span class="control-label" style="align-self:center;margin-right:8px;">Phase 8D Selection Strategy:</span>
-          <button class="strategy-pill active" data-strategy="strat_a">Strategy A (Reference Heuristic)</button>
-          <button class="strategy-pill" data-strategy="strat_b">Strategy B (Seller-Favouring)</button>
-          <button class="strategy-pill" data-strategy="strat_c">Strategy C (Buyer-Favouring)</button>
-          <button class="strategy-pill" data-strategy="strat_d">Strategy D (Max-Min Fair)</button>
-          <button class="strategy-pill" data-strategy="strat_e">Strategy E (Nash Social Welfare)</button>
-          <button class="strategy-pill" data-strategy="strat_f_05">Strategy F (Hybrid w=0.5)</button>
-          <span id="market-loading-spinner" class="loading-spinner" style="display:none;margin-left:auto;"></span>
-        </div>
-      </div>
-
-      <!-- Macroeconomic Financial Outcomes (Requirement 8) -->
+      <!-- Headline KPI Cards -->
       <div class="kpi-grid">
         <div class="kpi-card kpi-volume">
-          <div class="kpi-title">Total P2P Volume</div>
-          <div class="kpi-value" id="kpi-traded-volume">0.0000 kWh</div>
-          <div class="kpi-sub">Total physical cleared energy</div>
+          <div class="kpi-title">Total Community Profit</div>
+          <div class="kpi-value" id="kpi-total-profit">$10,559.67</div>
+          <div class="kpi-stat-sub">Across 1,000 simulated days (AUD)</div>
         </div>
         <div class="kpi-card kpi-vwap">
-          <div class="kpi-title">VWAP Cleared Price</div>
-          <div class="kpi-value" id="kpi-vwap">$0.0000/kWh</div>
-          <div class="kpi-sub">Volume-weighted average price</div>
+          <div class="kpi-title">Total Bill Reduction</div>
+          <div class="kpi-value" id="kpi-bill-reduction">40.07%</div>
+          <div class="kpi-stat-sub">Cost drops from $26.36/d to $15.80/d</div>
         </div>
         <div class="kpi-card kpi-welfare">
-          <div class="kpi-title">Community Welfare</div>
-          <div class="kpi-value" id="kpi-welfare">$0.0000</div>
-          <div class="kpi-sub">Exact social gain ($\Delta W = 0.22 \times Q$)</div>
+          <div class="kpi-title">Grid Spread Captured</div>
+          <div class="kpi-value">22.0¢ / kWh</div>
+          <div class="kpi-stat-sub">Import ($0.30) - Export ($0.08)</div>
         </div>
         <div class="kpi-card kpi-payment">
-          <div class="kpi-title">Total Buyer Payments</div>
-          <div class="kpi-value" id="kpi-buyer-payments">$0.0000</div>
-          <div class="kpi-sub">Bilateral payments $\sum b_j q_{ij}$</div>
+          <div class="kpi-title">Prosumer Households</div>
+          <div class="kpi-value">5 Homes</div>
+          <div class="kpi-stat-sub">H001, H002, H003, H004, H005</div>
         </div>
         <div class="kpi-card kpi-revenue">
-          <div class="kpi-title">Total Seller Revenues</div>
-          <div class="kpi-value" id="kpi-seller-revenues">$0.0000</div>
-          <div class="kpi-sub">Bilateral revenues $\sum a_i q_{ij}$</div>
+          <div class="kpi-title">BESS per Household</div>
+          <div class="kpi-value">5.0 kWh</div>
+          <div class="kpi-stat-sub">2.5 kW / 95% round-trip efficiency</div>
         </div>
         <div class="kpi-card kpi-balance">
-          <div class="kpi-title">Payment-Revenue Residual</div>
-          <div class="kpi-value" id="kpi-balance-residual" style="font-size:16px;">$0.000000 AUD</div>
-          <div class="kpi-sub">Conservation identity verification</div>
+          <div class="kpi-title">Monte Carlo Horizon</div>
+          <div class="kpi-value">24,000 Hrs</div>
+          <div class="kpi-stat-sub">1,000 days × 24 hourly game rounds</div>
         </div>
       </div>
 
-      <!-- Household Prosumer Cards (Requirement 5) -->
-      <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
-        <h2 style="font-size:16px;font-weight:700;">Participating Household Orders & Strategic Offers</h2>
-        <span style="font-size:12px;color:var(--text-muted);">
-          Active Strategy: <strong id="active-strategy-title" style="color:var(--primary-blue);">Strategy A</strong>
-        </span>
+      <!-- The Core Problem & Solution (Beginner-Friendly) -->
+      <div class="callout-box">
+        <div class="callout-title">💡 The Core Motivation: Why do we need this game?</div>
+        <p>
+          Traditional electric utilities create a <strong>distorted 22¢/kWh tariff spread</strong>: they charge households <strong>$0.30/kWh</strong> to buy electricity from the grid, but only credit <strong>$0.08/kWh</strong> when rooftop solar is exported. When a sunny household exports surplus energy, their next-door neighbor buys electricity from the grid at nearly 4× the price! Furthermore, midday solar flooding causes local transformer over-voltage (the "duck curve").
+        </p>
+        <p style="margin-top:8px;">
+          <strong>Our Solution:</strong> By pairing each household with a <strong>5.0 kWh battery</strong> and coordinating trades through a <strong>multi-agent dynamic pricing game</strong>, neighbors trade surplus energy directly at an incentive-compatible price between $0.08 and $0.30/kWh. The 22¢ spread stays inside the community, yielding <strong>$10,559.67 AUD in direct savings</strong>.
+        </p>
       </div>
-      <div id="prosumer-cards-container" class="prosumer-grid">
+
+      <!-- 4-Step Architectural Pipeline -->
+      <h2 style="font-size:16px;font-weight:700;margin:24px 0 10px 0;">The 4-Step Computational Pipeline</h2>
+      <div class="pipeline-grid">
+        <div class="pipeline-card">
+          <span class="pipeline-step-badge">STEP 1</span>
+          <div class="pipeline-card-title">Monte Carlo Uncertainty</div>
+          <div class="pipeline-card-desc">
+            Takes 365 days of real Ausgrid solar and load panel data. Uses smoothed block bootstrapping with Gaussian noise to generate 1,000 synthetic days (24,000 rounds) preserving microgrid weather correlation.
+          </div>
+        </div>
+        <div class="pipeline-card">
+          <span class="pipeline-step-badge">STEP 2</span>
+          <div class="pipeline-card-title">Battery BESS Dispatch</div>
+          <div class="pipeline-card-desc">
+            Each household's 5.0 kWh battery executes greedy self-consumption: surplus solar charges the battery first; deficits draw from the battery first. Only unabsorbed energy enters the P2P market.
+          </div>
+        </div>
+        <div class="pipeline-card">
+          <span class="pipeline-step-badge">STEP 3</span>
+          <div class="pipeline-card-title">Dynamic Price Discovery</div>
+          <div class="pipeline-card-desc">
+            Aggregate community demand pressure &lambda; = D<sub>pool</sub> / S<sub>pool</sub> dynamically sets clearing price P<sub>P2P</sub> &in; [$0.08, $0.30] AUD/kWh, guaranteeing Pareto-dominant coordination.
+          </div>
+        </div>
+        <div class="pipeline-card">
+          <span class="pipeline-step-badge">STEP 4</span>
+          <div class="pipeline-card-title">Counterfactual Benchmarking</div>
+          <div class="pipeline-card-desc">
+            Rigorously compares 4 operational modes: Pure Grid vs. Solar-Only vs. Battery-Only vs. Proposed P2P Game, isolating the exact dividends of solar, storage, and software coordination.
+          </div>
+        </div>
+      </div>
+
+      <!-- Computation Hierarchy: Hour vs. Day vs. 1,000 Scenarios -->
+      <div class="section-card" style="margin-top: 20px;">
+        <div class="section-card-header">
+          <div class="section-card-title">⏱️ Computation Hierarchy: Hourly Market vs. Daily Scenarios vs. Final Output</div>
+          <span class="badge badge-success">How the Loops & Mathematics Work</span>
+        </div>
+        <div class="section-card-body">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;">
+            <div style="background:#f8fafc;border:1px solid var(--border-light);border-radius:8px;padding:14px;">
+              <div style="font-weight:700;color:var(--primary-blue);margin-bottom:6px;font-size:14px;">1. Every Single Hour (h = 0 to 23)</div>
+              <p style="font-size:12px;color:var(--text-muted);line-height:1.5;">
+                • Solar &amp; load realized for each house.<br>
+                • Battery charges surplus or discharges for deficit.<br>
+                • Unabsorbed energy enters trading pool (S<sub>pool</sub>, D<sub>pool</sub>).<br>
+                • Market pressure &lambda; sets P2P price P<sub>P2P</sub> &in; [$0.08, $0.30].<br>
+                • P2P trades matched pro-rata; hourly bills calculated.
+              </p>
+              <div style="margin-top:8px;font-weight:600;font-size:11px;color:var(--text-main);background:#fff;padding:6px;border-radius:4px;border:1px solid var(--border-light);">
+                Total: 24,000 Hourly Game Rounds (1,000 days × 24 hrs)
+              </div>
+            </div>
+
+            <div style="background:#f8fafc;border:1px solid var(--border-light);border-radius:8px;padding:14px;">
+              <div style="font-weight:700;color:#ff7f0e;margin-bottom:6px;font-size:14px;">2. One Scenario = 1 Full 24-Hour Day</div>
+              <p style="font-size:12px;color:var(--text-muted);line-height:1.5;">
+                • Each scenario is a complete 24-hour day across all 5 homes.<br>
+                • Batteries reset to 50% SOC at 00:00.<br>
+                • All 24 hourly bills are summed up:<br>
+                &nbsp;&nbsp;<code style="background:#e2e8f0;padding:2px 6px;border-radius:3px;font-size:11px;">Daily Cost<sub>s</sub> = &sum;<sub>h=0</sub><sup>23</sup> Hourly Cost<sub>s,h</sub></code><br>
+                • Produces 1,000 distinct daily cost records per house.
+              </p>
+              <div style="margin-top:8px;font-weight:600;font-size:11px;color:var(--text-main);background:#fff;padding:6px;border-radius:4px;border:1px solid var(--border-light);">
+                Output: 1,000 Daily Cost Data Points per Mode
+              </div>
+            </div>
+
+            <div style="background:#f8fafc;border:1px solid var(--border-light);border-radius:8px;padding:14px;">
+              <div style="font-weight:700;color:var(--seller-green);margin-bottom:6px;font-size:14px;">3. Final Output = Average of 1,000 Days</div>
+              <p style="font-size:12px;color:var(--text-muted);line-height:1.5;">
+                • The headline daily numbers are the <strong>average of all 1,000 simulated days</strong>:<br>
+                &nbsp;&nbsp;<code style="background:#e2e8f0;padding:2px 6px;border-radius:3px;font-size:11px;">Avg Daily Cost = (1/1000) &sum; Daily Cost<sub>s</sub></code><br>
+                • Baseline drops from $26.36/d &rarr; $15.80/d ($10.56/d savings).<br>
+                • 1,000-Day Total Profit = 1,000 &times; $10.55967 = <strong>$10,559.67 AUD</strong>.
+              </p>
+              <div style="margin-top:8px;font-weight:600;font-size:11px;color:var(--seller-green);background:#ecfdf5;padding:6px;border-radius:4px;border:1px solid #a7f3d0;">
+                Result: 40.07% Total Community Bill Reduction
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Household Archetypes Grid -->
+      <h2 style="font-size:16px;font-weight:700;margin:24px 0 10px 0;">The 5 Market Participants (Personas)</h2>
+      <div class="persona-grid" id="persona-cards-container">
         <!-- Injected via JavaScript -->
       </div>
-
-      <!-- Double Auction Merit Order & Clearing Process (Requirement 6) -->
-      <div class="section-card">
-        <div class="section-card-header">
-          <div class="section-card-title">Double Auction Merit-Order Clearing Process</div>
-          <span class="badge badge-neutral">Midpoint Pricing: $p_{ij} = (a_i + b_j)/2$</span>
-        </div>
-        <div class="section-card-body">
-          <!-- Crossing Condition Banner -->
-          <div id="auction-crossing-banner" class="crossing-banner crossing-success">
-            Crossing status evaluated...
-          </div>
-
-          <!-- Side-by-side Merit Orders -->
-          <div class="auction-columns-grid">
-            <!-- Sellers Ascending -->
-            <div class="auction-column">
-              <div class="auction-column-title">
-                <span>SELLER ASKS (Sorted Ascending by Ask Price)</span>
-                <span class="badge badge-success">Lowest Ask Priority</span>
-              </div>
-              <div id="auction-sellers-list"></div>
-            </div>
-
-            <!-- Buyers Descending -->
-            <div class="auction-column">
-              <div class="auction-column-title">
-                <span>BUYER BIDS (Sorted Descending by Bid Price)</span>
-                <span class="badge badge-info">Highest Bid Priority</span>
-              </div>
-              <div id="auction-buyers-list"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Bilateral Transaction Records (Requirement 7) -->
-      <div class="section-card">
-        <div class="section-card-header">
-          <div class="section-card-title">Bilateral Transaction Records</div>
-          <span class="badge badge-info">Step 4 Reconstructed Bilateral Clearing</span>
-        </div>
-        <div class="section-card-body" style="padding:0;">
-          <div id="transactions-empty-state" class="empty-state" style="display:none;">
-            <p style="font-weight:600;font-size:14px;color:var(--text-main);">No Transactions Executed</p>
-            <p style="font-size:12px;margin-top:4px;">In this hour, either no sellers and buyers coincided or bids did not cross asks (Volume = 0.0000 kWh, VWAP = N/A).</p>
-          </div>
-          <div id="transactions-table-wrapper" class="data-table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Transaction ID</th>
-                  <th>Seller</th>
-                  <th>Buyer</th>
-                  <th>Seller Ask</th>
-                  <th>Buyer Bid</th>
-                  <th>Clearing Price</th>
-                  <th>Matched Qty</th>
-                  <th>Seller Revenue</th>
-                  <th>Buyer Payment</th>
-                </tr>
-              </thead>
-              <tbody id="transactions-table-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Phase 8D Strategy Choices Comparison (Requirement 3) -->
-      <div class="section-card">
-        <div class="section-card-header">
-          <div class="section-card-title">Phase 8D Social Choice Strategies Comparison (This Hour)</div>
-          <span style="font-size:12px;color:var(--text-muted);">Click any row to switch active clearing strategy</span>
-        </div>
-        <div class="section-card-body" style="padding:0;">
-          <div class="data-table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Strategy Choice</th>
-                  <th>Price Profile $(p_1, p_2, p_3)$</th>
-                  <th>Traded Volume</th>
-                  <th>VWAP</th>
-                  <th>Community Welfare</th>
-                  <th>Payoffs $(U_1, U_2, U_3)$</th>
-                  <th>Gini Inequality</th>
-                </tr>
-              </thead>
-              <tbody id="strategies-table-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Payoff Reconciliation: Stored vs Reconstructed (Requirement 9) -->
-      <div class="section-card">
-        <div class="section-card-header">
-          <div class="section-card-title">Payoff Reconciliation: Stored Phase 8D Payoffs vs. Reconstructed Transaction Benefits</div>
-          <span class="badge badge-success">Audit Verification: Exact Agreement</span>
-        </div>
-        <div class="section-card-body">
-          <div class="data-table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Household</th>
-                  <th>Physical Role</th>
-                  <th>Stored Phase 8D Payoff ($U_i^{\text{stored}}$)</th>
-                  <th>Reconstructed Benefit ($U_i^{\text{recon}}$)</th>
-                  <th>Absolute Discrepancy $|\Delta|$</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody id="reconciliation-table-body"></tbody>
-            </table>
-          </div>
-          <div class="reconciliation-box">
-            <strong>Methodology & Proof:</strong>
-            Stored payoffs originate from the frozen <code>reports/phase8d_hourly_selection.csv</code> dataset. Reconstructed transaction benefits are verified in Step 4 by passing the stored selected strategy price vector $(p_1^*, p_2^*, p_3^*)$ into the existing clearing engine <code>clear_strategic_double_auction()</code> from <code>src/game/strategic_market.py</code> without re-running any Nash equilibrium solver. The zero discrepancy demonstrates complete mathematical and data-contract consistency.
-          </div>
-        </div>
-      </div>
-
-      <!-- Phase 8C Equilibrium Context (Requirement 10) -->
-      <div class="section-card">
-        <div class="section-card-header">
-          <div class="section-card-title">Phase 8C Pure Nash Equilibrium Context (Zero Recomputation)</div>
-          <span class="badge badge-neutral">Precomputed Frozen Artifact</span>
-        </div>
-        <div class="section-card-body">
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:16px;">
-            <div style="background:#f8fafc;padding:12px;border-radius:6px;border:1px solid var(--border-light);">
-              <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Profiles Evaluated</div>
-              <div style="font-size:18px;font-weight:700;font-family:var(--font-mono);" id="ctx-profiles-evaluated">-</div>
-              <div style="font-size:11px;color:var(--text-muted);" id="ctx-profiles-sub">Combinatorial grid</div>
-            </div>
-            <div style="background:#f8fafc;padding:12px;border-radius:6px;border:1px solid var(--border-light);">
-              <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Deviations Evaluated</div>
-              <div style="font-size:18px;font-weight:700;font-family:var(--font-mono);" id="ctx-deviations-evaluated">-</div>
-              <div style="font-size:11px;color:var(--text-muted);" id="ctx-deviations-sub">Unilateral deviations</div>
-            </div>
-            <div style="background:#f8fafc;padding:12px;border-radius:6px;border:1px solid var(--border-light);">
-              <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Pure Nash Equilibria</div>
-              <div style="font-size:18px;font-weight:700;font-family:var(--font-mono);color:var(--primary-blue);" id="ctx-pne-count">0</div>
-              <div style="font-size:11px;color:var(--text-muted);">Total PNE discovered</div>
-            </div>
-            <div style="background:#f8fafc;padding:12px;border-radius:6px;border:1px solid var(--border-light);">
-              <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Strict PNE</div>
-              <div style="font-size:18px;font-weight:700;font-family:var(--font-mono);" id="ctx-strict-pne">0</div>
-              <div style="font-size:11px;color:var(--text-muted);">$u_i^* > u_i(s_i', s_{-i}^*)$</div>
-            </div>
-            <div style="background:#f8fafc;padding:12px;border-radius:6px;border:1px solid var(--border-light);">
-              <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Weak PNE</div>
-              <div style="font-size:18px;font-weight:700;font-family:var(--font-mono);" id="ctx-weak-pne">0</div>
-              <div style="font-size:11px;color:var(--text-muted);">$u_i^* \ge u_i(s_i', s_{-i}^*)$</div>
-            </div>
-            <div style="background:#f8fafc;padding:12px;border-radius:6px;border:1px solid var(--border-light);">
-              <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Pareto-Undominated PNE</div>
-              <div style="font-size:18px;font-weight:700;font-family:var(--font-mono);color:var(--seller-green);" id="ctx-pareto-pne">0</div>
-              <div style="font-size:11px;color:var(--text-muted);">Candidate set for Phase 8D</div>
-            </div>
-          </div>
-          <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">
-            <div><strong>Strategic Price Action Grid:</strong> <span id="ctx-price-grid" class="mono">[0.08, 0.12, 0.16, 0.19, 0.22, 0.26, 0.30] AUD/kWh (K=7)</span></div>
-            <div><strong>Clearing Source:</strong> <span id="ctx-transaction-source" class="mono">reconstructed_via_existing_clearing_function</span></div>
-            <div style="margin-top:6px;background:#ecfdf5;border:1px solid #a7f3d0;padding:8px 12px;border-radius:6px;color:#065f46;display:flex;justify-content:space-between;align-items:center;">
-              <span><strong>Phase 8E Stochastic Nash Active:</strong> Evaluate expected payoffs across 1,000 Monte Carlo scenarios.</span>
-              <button id="btn-jump-to-stochastic" class="btn-primary" style="padding:4px 10px;font-size:11px;">Switch to Stochastic View &rarr;</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
     </div>
 
-    <!-- ==================================================================== -->
-    <!-- TAB PANE: PHASE 8E STOCHASTIC EXPECTED-PAYOFF NASH EQUILIBRIUM       -->
-    <!-- ==================================================================== -->
-    <div id="pane-stochastic" class="tab-pane">
-
-      <!-- Section Title & Status Notice -->
+    <!-- ================================================================== -->
+    <!-- TAB 2: SCENARIO & TRAJECTORY GENERATION                            -->
+    <!-- ================================================================== -->
+    <div id="pane-scenarios" class="tab-pane">
       <div class="section-header">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-          <div>
-            <h1 class="section-title">Phase 8E: Stochastic Expected-Payoff Nash Equilibrium</h1>
-            <p class="section-desc">
-              Game-theoretic energy trading under renewable forecast uncertainty. Evaluates 1,000 synchronized Monte Carlo demand/solar scenarios with non-anticipative battery dispatch.
-            </p>
-          </div>
-          <div style="text-align:right;">
-            <span class="stoch-badge-pill">✓ Stochastic Engine Active</span>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
-              Ex-Ante Role-Conditioned Bidding (Option 1A)
-            </div>
-          </div>
-        </div>
+        <h1 class="section-title">How Scenarios & Trajectories are Generated</h1>
+        <p class="section-desc">
+          Understanding the mathematical generation of stochastic renewable trajectories: smoothed block bootstrap, diurnal variance, and physical non-negativity laws.
+        </p>
       </div>
 
-      <!-- Modeling Explanation & Academic Disclosure Box -->
-      <div class="stoch-callout" style="margin-bottom:16px;">
-        <div style="font-weight:700;margin-bottom:4px;color:#1e3a8a;">Mathematical Modeling Formulation & Contract Specifications:</div>
-        <ul style="margin-left:18px;font-size:12px;line-height:1.7;">
-          <li><strong>Option 1A Seven-Price Bidding:</strong> Active prosumers choose 1 action from discrete grid $\mathcal{P} = \{0.08, 0.12, 0.16, 0.19, 0.22, 0.26, 0.30\}$ AUD/kWh (ASK if ex-ante seller, BID if ex-ante buyer).</li>
-          <li><strong>Option 2A Synchronized Uncertainty:</strong> 1,000 paired demand-solar scenarios generated via synchronized validation residual pool draws, preserving microgrid-wide weather correlation.</li>
-          <li><strong>Option 3A Frozen Battery Dispatch:</strong> Adopts authoritative Phase 7.1 Stochastic MPC first-stage decisions ($C_0, B_0$) fixed across all scenarios for that hour.</li>
-          <li><strong>Physical Role-Conflict Clamping:</strong> In scenarios where realized net flow opposes ex-ante role, the household submits no order ($q=0$). Inactive households submit no order.</li>
-          <li><strong>Expected Payoff Integration:</strong> Expected payoffs $\mathbb{E}[U_i(a)] = \frac{1}{M}\sum_{s=1}^M U_i(a, \omega_s)$ are averaged strictly across all 1,000 scenarios (denominator $M=1,000$).</li>
-          <li><strong>Academic Disclosure:</strong> This is a restricted ex-ante role-conditioned game, <em>not</em> a full two-sided contingent bidding game. For zero-trade hours, all 343 profiles yield identical zero payoffs and form weak equilibria.</li>
+      <!-- Mathematical Callout -->
+      <div class="callout-box">
+        <div class="callout-title">📐 The Scenario Generation Pipeline Explained (Smoothed Block Bootstrap)</div>
+        <ul style="margin-left:18px;font-size:12.5px;line-height:1.7;">
+          <li><strong>1. Whole-Day Vector Sampling:</strong> Rather than sampling individual hours independently, we sample entire 24-hour day vectors across all 5 households simultaneously. This preserves the <em>cross-household weather correlation</em> (if Sydney has cloud cover at 1:00 PM, all 5 homes experience reduced solar).</li>
+          <li><strong>2. Hour-of-Day Diurnal Variance:</strong> For each hour $h \in [0, 23]$, we calculate historical standard deviations $\sigma_D(h)$ and $\sigma_S(h)$.</li>
+          <li><strong>3. Gaussian Noise Injection:</strong> Synthetic weather variance is introduced via $\epsilon \sim \mathcal{N}(0, (0.15 \cdot \sigma)^2)$.</li>
+          <li><strong>4. Physical Constraints:</strong> We enforce non-negativity ($D \ge 0, S \ge 0$) and strictly clamp solar generation to 0 at night whenever historical base solar is zero.</li>
         </ul>
       </div>
 
-      <!-- Error & Loading Banners -->
-      <div id="stoch-error-banner" class="alert-banner alert-banner-error" style="display:none;"></div>
-
-      <!-- Interactive Controls Card -->
-      <div class="control-card">
-        <div class="control-row">
-          <!-- Preset Hours -->
-          <div class="control-group" style="flex: 2; min-width: 320px;">
-            <span class="control-label">Representative Chronological Hours</span>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;">
-              <button class="btn-preset active" data-stoch-ts="2013-05-15 11:00:00">Midday Peak (11:00)</button>
-              <button class="btn-preset" data-stoch-ts="2013-05-15 08:00:00">Morning Ramp (08:00)</button>
-              <button class="btn-preset" data-stoch-ts="2013-05-15 14:00:00">Afternoon (14:00)</button>
-              <button class="btn-preset" data-stoch-ts="2013-05-15 18:00:00">Evening Peak (18:00)</button>
-              <button class="btn-preset" data-stoch-ts="2013-05-15 02:00:00">Night Baseline (02:00)</button>
-            </div>
-          </div>
-
-          <!-- Custom Timestamp Input -->
-          <div class="control-group" style="flex: 1.2; min-width: 240px;">
-            <span class="control-label">Target ISO Timestamp</span>
-            <div style="display:flex;gap:6px;">
-              <input type="text" id="stoch-timestamp-input" class="text-input" value="2013-05-15 11:00:00" style="flex:1;">
-              <button id="btn-stoch-calculate" class="btn-primary" style="white-space:nowrap;">
-                ⚡ Calculate Equilibrium
-              </button>
-            </div>
-          </div>
-
-          <!-- Loading Indicator -->
-          <div class="control-group" style="flex: 0.5; min-width: 120px; justify-content:center; align-items:center;">
-            <span id="stoch-loading-spinner" class="loading-spinner" style="display:none;"></span>
-            <span id="stoch-loading-label" style="font-size:11px;color:var(--text-muted);display:none;">Solving 343k clearings...</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Macroeconomic Financial Outcomes KPI Grid (Requirement 3.B) -->
-      <div class="kpi-grid">
-        <div class="kpi-card kpi-volume">
-          <div class="kpi-title">Expected Traded Energy</div>
-          <div class="kpi-value" id="stoch-kpi-traded">0.0000 kWh</div>
-          <div class="kpi-sub">$\mathbb{E}[Q_{\text{trade}}]$ across 1,000 scenarios</div>
-        </div>
-        <div class="kpi-card kpi-welfare">
-          <div class="kpi-title">Expected Community Welfare</div>
-          <div class="kpi-value" id="stoch-kpi-welfare">$0.0000 AUD</div>
-          <div class="kpi-sub">$\mathbb{E}[W] = 0.22 \times \mathbb{E}[Q_{\text{trade}}]$ verified</div>
-        </div>
-        <div class="kpi-card kpi-vwap">
-          <div class="kpi-title">Expected VWAP Price</div>
-          <div class="kpi-value" id="stoch-kpi-vwap">$0.0000/kWh</div>
-          <div class="kpi-sub">$\mathbb{E}[V] / \mathbb{E}[Q]$ transaction weighted</div>
-        </div>
-        <div class="kpi-card kpi-payment">
-          <div class="kpi-title">Tradeable Scenarios</div>
-          <div class="kpi-value" id="stoch-kpi-tradeable">0 / 1000</div>
-          <div class="kpi-sub" id="stoch-kpi-tradeable-pct">Active buyer & seller overlap</div>
-        </div>
-        <div class="kpi-card kpi-revenue">
-          <div class="kpi-title">Stochastic Pure Nash Eq.</div>
-          <div class="kpi-value" id="stoch-kpi-pne" style="color:var(--primary-blue);">0 PNE</div>
-          <div class="kpi-sub" id="stoch-kpi-pne-sub">0 Strict, 0 Weak, 0 Pareto</div>
-        </div>
-        <div class="kpi-card kpi-balance">
-          <div class="kpi-title">Selected Price Profile</div>
-          <div class="kpi-value" id="stoch-kpi-profile" style="font-size:14px;">-</div>
-          <div class="kpi-sub">5-step representative selection</div>
-        </div>
-      </div>
-
-      <!-- Participating Household Overviews & Role Frequencies (Requirement 3.A) -->
-      <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
-        <h2 style="font-size:16px;font-weight:700;">Participating Household Ex-Ante Roles & Scenario Distributions</h2>
-        <span style="font-size:12px;color:var(--text-muted);">
-          Synchronized Monte Carlo Realizations: <strong>1,000 Scenarios</strong>
-        </span>
-      </div>
-      <div id="stoch-prosumer-cards-container" class="prosumer-grid" style="margin-bottom:20px;">
-        <!-- Injected via JavaScript -->
-      </div>
-
-      <!-- Side-by-Side Comparison: Deterministic (Phase 8C) vs Stochastic (Phase 8E) (Requirement 3.D) -->
+      <!-- Interactive Household Trajectory Selector -->
       <div class="section-card">
         <div class="section-card-header">
-          <div class="section-card-title">Deterministic Ex-Post (Phase 8C) vs. Stochastic Expected (Phase 8E) Side-by-Side Comparison</div>
-          <span class="badge badge-info">Jensen's Inequality & Uncertainty Quantification</span>
+          <div class="section-card-title">Interactive 24-Hour Diurnal Trajectory Explorer</div>
+          <div style="display:flex;gap:8px;" id="trajectory-house-pills">
+            <button class="house-pill-btn active" data-house="H001">H001 (Seller)</button>
+            <button class="house-pill-btn" data-house="H002">H002</button>
+            <button class="house-pill-btn" data-house="H003">H003</button>
+            <button class="house-pill-btn" data-house="H004">H004 (Buyer)</button>
+            <button class="house-pill-btn" data-house="H005">H005</button>
+            <button class="house-pill-btn" data-house="COMMUNITY_TOTAL">Community Total</button>
+          </div>
         </div>
         <div class="section-card-body">
-          <div class="comparison-card-grid" id="stoch-comp-cards-grid">
-            <!-- Injected via JS -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:13px;font-weight:600;color:var(--text-main);" id="trajectory-chart-label">
+              Household H001: 24-Hour Solar vs. Demand Trajectory with 10%–90% Confidence Envelope
+            </span>
+            <span style="font-size:11px;color:var(--text-muted);">
+              Shaded bands represent 10th to 90th percentile Monte Carlo spread
+            </span>
           </div>
-
-          <div class="data-table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Performance Metric</th>
-                  <th>Phase 8C Deterministic Ex-Post</th>
-                  <th>Phase 8E Stochastic Expected ($M=1,000$)</th>
-                  <th>Absolute Difference</th>
-                  <th>Relative Difference (%)</th>
-                  <th>Uncertainty Impact / Jensen Effect</th>
-                </tr>
-              </thead>
-              <tbody id="stoch-comparison-table-body">
-                <!-- Injected via JS -->
-              </tbody>
-            </table>
-          </div>
-
-          <div class="stoch-callout" style="margin-top:14px;">
-            <strong>Jensen's Inequality Impact:</strong>
-            Because peer-to-peer double auction clearing relies on the concave minimum matching operator $Q = \min(S, D)$, mathematical expectation yields $\mathbb{E}[\min(S, D)] \le \min(\mathbb{E}[S], \mathbb{E}[D])$. Forecast variance across the 1,000 Monte Carlo scenarios combined with role-conflict order clamping results in reduced expected cleared energy compared to assuming perfect certainty.
+          <div class="chart-container">
+            <canvas id="diurnalTrajectoryChart"></canvas>
           </div>
         </div>
       </div>
 
-      <!-- Pareto-Undominated Stochastic Equilibria (Requirement 3.C) -->
+      <!-- Interactive Scenario Generator Demo -->
       <div class="section-card">
         <div class="section-card-header">
-          <div class="section-card-title">Pareto-Undominated Stochastic Pure Nash Equilibria</div>
-          <span class="badge badge-success" id="stoch-pareto-badge">Candidate Selection Frontier</span>
+          <div class="section-card-title">Live Demonstration: Base Historical Day vs. Perturbed Monte Carlo Scenarios</div>
+          <button class="btn-primary" id="btn-regenerate-scenarios" style="padding:4px 12px;font-size:12px;">
+            ⚡ Resample Noise (New Seed)
+          </button>
         </div>
-        <div class="section-card-body" style="padding:0;">
-          <div class="data-table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Equilibrium Status</th>
-                  <th>Price Profile $(p_1, p_2, p_3)$</th>
-                  <th>Expected Traded Volume</th>
-                  <th>Expected Community Welfare</th>
-                  <th>Expected VWAP</th>
-                  <th>Expected Payoffs $(U_1, U_2, U_3)$</th>
-                  <th>Classification</th>
-                </tr>
-              </thead>
-              <tbody id="stoch-pareto-table-body">
-                <!-- Injected via JS -->
-              </tbody>
-            </table>
+        <div class="section-card-body">
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+            Below is an actual historical day from the Ausgrid panel for H001, plotted alongside 3 synthetically perturbed Monte Carlo days showing how weather variability is realistically introduced.
+          </p>
+          <div class="chart-container">
+            <canvas id="scenarioDemoChart"></canvas>
           </div>
         </div>
       </div>
 
-      <!-- Full Expected Payoff Combinatorial Table (Requirement 3.E) -->
-      <div class="section-card">
-        <div class="section-card-header">
-          <div class="section-card-title">Combinatorial Expected Payoff Matrix ($7^3 = 343$ Strategy Profiles)</div>
-          <span style="font-size:12px;color:var(--text-muted);">
-            Precomputed expected payoffs averaged over all 1,000 scenarios
-          </span>
+      <!-- FAQ / Mathematical Clarification Callout -->
+      <div class="callout-box" style="background:#f0fdf4;border-left-color:var(--seller-green);margin-top:20px;">
+        <div class="callout-title" style="color:#166534;font-size:14px;">
+          ❓ Core Clarification: How Trajectories are Averaged to obtain the Final Output
         </div>
-        <div class="section-card-body" style="padding:0;">
-          <div class="payoff-table-scrollable">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Profile Index</th>
-                  <th>H001 Price (AUD)</th>
-                  <th>H002 Price (AUD)</th>
-                  <th>H003 Price (AUD)</th>
-                  <th>$\mathbb{E}[U_{\text{H001}}]$ (AUD)</th>
-                  <th>$\mathbb{E}[U_{\text{H002}}]$ (AUD)</th>
-                  <th>$\mathbb{E}[U_{\text{H003}}]$ (AUD)</th>
-                  <th>Expected Traded (kWh)</th>
-                  <th>Expected Welfare (AUD)</th>
-                  <th>Expected VWAP (AUD)</th>
-                </tr>
-              </thead>
-              <tbody id="stoch-payoff-table-body">
-                <tr><td colspan="10" style="text-align:center;padding:20px;">Click 'Calculate Equilibrium' to populate expected payoff table...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-
-    <!-- ==================================================================== -->
-    <!-- TAB PANE: EXECUTIVE OVERVIEW                                         -->
-    <!-- ==================================================================== -->
-    <div id="pane-overview" class="tab-pane">
-      <div class="section-header">
-        <h1 class="section-title">Executive Overview & Microgrid System Status</h1>
-        <p class="section-desc">Audited customer profiles, Ausgrid data provenance, and system verification status.</p>
-      </div>
-
-      <div class="kpi-grid">
-        <div class="kpi-card kpi-volume">
-          <div class="kpi-title">Regression Verification</div>
-          <div class="kpi-value" id="overview-test-badge" style="font-size:18px;">250 / 250 Passing</div>
-          <div class="kpi-sub">100% test pass rate across 10 test modules</div>
-        </div>
-        <div class="kpi-card kpi-vwap">
-          <div class="kpi-title">Test Horizon Duration</div>
-          <div class="kpi-value" id="overview-test-hours">1,752 Hours</div>
-          <div class="kpi-sub">73-day out-of-sample evaluation period</div>
-        </div>
-        <div class="kpi-card kpi-welfare">
-          <div class="kpi-title">Prosumer Households</div>
-          <div class="kpi-value">3 Prosumers</div>
-          <div class="kpi-sub">H001 (5kW PV), H002 (3kW PV), H003 (No PV)</div>
-        </div>
-        <div class="kpi-card kpi-revenue">
-          <div class="kpi-title">Data Provenance</div>
-          <div class="kpi-value" style="font-size:16px;">Ausgrid 2012–2013</div>
-          <div class="kpi-sub">Preprocessed clean hourly panel</div>
-        </div>
-      </div>
-
-      <div style="margin-bottom:16px;">
-        <h2 style="font-size:16px;font-weight:700;margin-bottom:12px;">Customer Specifications</h2>
-        <div id="overview-profiles-container" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
-          <!-- Injected via JS -->
-        </div>
+        <p style="color:#14532d;font-size:12.5px;line-height:1.6;">
+          <strong>Is the output for a day obtained by taking the average of 1,000 trajectories?</strong><br>
+          <strong>YES, EXACTLY.</strong> Each of the 1,000 Monte Carlo scenarios represents one full 24-hour day across the 5 households. For each day $s \in [1, 1000]$, the system simulates all 24 sequential hourly game rounds, accumulating the daily cost:
+          $$\text{Daily Cost}_s = \sum_{h=0}^{23} \text{Hourly Cost}_{s,h}$$
+          The headline daily numbers reported in our thesis and dashboard (e.g. <strong>$26.36/day</strong> Pure Grid vs. <strong>$15.80/day</strong> Proposed Game) are the exact <strong>arithmetic mean of those 1,000 daily totals</strong>:
+          $$\text{Average Daily Cost} = \frac{1}{1000} \sum_{s=1}^{1000} \text{Daily Cost}_s$$
+          Similarly, the 24-hour diurnal curves plotted in the chart above represent the hour-by-hour average across all 1,000 trajectories, where the shaded envelope reflects the 10th and 90th percentile bounds across the 1,000 simulated days.
+        </p>
       </div>
     </div>
 
-    <!-- ==================================================================== -->
-    <!-- TAB PANE: FORECASTING & UNCERTAINTY                                  -->
-    <!-- ==================================================================== -->
-    <div id="pane-forecasting" class="tab-pane">
+    <!-- ================================================================== -->
+    <!-- TAB 3: BATTERY DISPATCH & DYNAMIC PRICING                          -->
+    <!-- ================================================================== -->
+    <div id="pane-battery" class="tab-pane">
       <div class="section-header">
-        <h1 class="section-title">Deep Learning Forecasting & Uncertainty Quantification</h1>
-        <p class="section-desc">Honest model comparison between Deep LSTM and Persistence baselines, with 90% Monte Carlo prediction intervals.</p>
+        <h1 class="section-title">Physical Battery Dispatch & Dynamic P2P Pricing</h1>
+        <p class="section-desc">
+          How local battery energy storage systems (BESS) charge during the midday solar surge, discharge during evening load peaks, and how dynamic market pricing is discovered.
+        </p>
       </div>
 
+      <div class="callout-box">
+        <div class="callout-title">🔋 Physical Battery Specifications & Greedy Pre-Game Dispatch</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:6px;font-size:12px;">
+          <div>• <strong>Capacity:</strong> 5.0 kWh per home</div>
+          <div>• <strong>Max Power:</strong> 2.5 kW charge/discharge</div>
+          <div>• <strong>Round-trip Efficiency:</strong> 95.0% (&eta; &asymp; 97.5%)</div>
+          <div>• <strong>Safe Operating SOC:</strong> 10% to 90% (0.5 to 4.5 kWh)</div>
+        </div>
+        <p style="font-size:12px;margin-top:8px;">
+          <strong>Pre-Game Greedy Dispatch Rule:</strong> Solar surplus charges the battery first up to 90% SOC. Household deficits draw from the battery first down to 10% SOC. Only the <em>unabsorbed net surplus</em> (S<sup>net</sup>) or <em>unmet net deficit</em> (D<sup>net</sup>) enters the peer-to-peer trading pool.
+        </p>
+      </div>
+
+      <!-- Battery SOC & Power Trajectory Chart -->
       <div class="section-card">
         <div class="section-card-header">
-          <div class="section-card-title">Point Forecast Evaluation Scorecard</div>
+          <div class="section-card-title">24-Hour Battery Dispatch Dynamics (H001 Solar Powerhouse)</div>
+          <span class="badge badge-info">Initialized Half-Full (SOC = 50%) at 00:00</span>
         </div>
-        <div class="section-card-body" style="padding:0;">
-          <div class="data-table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Household</th>
-                  <th>Target Variable</th>
-                  <th>Model Architecture</th>
-                  <th>Mean Absolute Error (MAE)</th>
-                  <th>Root Mean Squared Error (RMSE)</th>
-                </tr>
-              </thead>
-              <tbody id="forecast-scorecard-table-body">
-                <tr><td colspan="5" style="text-align:center;">Click tab to load forecast data...</td></tr>
-              </tbody>
-            </table>
+        <div class="section-card-body">
+          <div class="chart-container">
+            <canvas id="batteryDispatchChart"></canvas>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:10px;">
+            <div>
+              <strong>☀️ Midday Charging (09:00 – 12:00):</strong> As rooftop solar peaks, battery SOC climbs rapidly to 90% (maximum safe limit).
+            </div>
+            <div>
+              <strong>⚡ Trading Window (12:00 – 15:00):</strong> Once battery is full, excess solar spills into the P2P market as tradeable net surplus.
+            </div>
+            <div>
+              <strong>🌙 Evening Peak Shaving (17:00 – 22:00):</strong> The battery discharges stored solar energy to cover dinner demand, avoiding 30¢ grid imports!
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic Price Discovery Chart -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-card-title">Dynamic Price Discovery & Community Trading Pool</div>
+          <span class="badge badge-success">Uncapped Dynamic Pricing Model</span>
+        </div>
+        <div class="section-card-body">
+          <div class="callout-box" style="margin-top:0;">
+            <div class="callout-title">Dynamic Price Formula:</div>
+            $$\lambda = \frac{D_{\text{pool}}}{S_{\text{pool}} + \epsilon}, \qquad P_{\text{P2P}} = P_{\text{export}} + \left(\frac{\lambda}{\lambda_{\max}}\right) \cdot (P_{\text{import}} - P_{\text{export}})$$
+            When surplus solar floods the market (&lambda; &rarr; 0), price drops to $0.08/kWh (cheap green energy for buyers). When demand dominates (&lambda; &ge; 2.0), price rises toward $0.30/kWh (high earnings for sellers).
+          </div>
+          <div class="chart-container">
+            <canvas id="dynamicPricingChart"></canvas>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ==================================================================== -->
-    <!-- TAB PANE: P2P MARKET & LIQUIDITY                                    -->
-    <!-- ==================================================================== -->
-    <div id="pane-p2p" class="tab-pane">
+    <!-- ================================================================== -->
+    <!-- TAB 4: FOUR OPERATIONAL MODES & SAVINGS                            -->
+    <!-- ================================================================== -->
+    <div id="pane-modes" class="tab-pane">
       <div class="section-header">
-        <h1 class="section-title">P2P Market Clearing & Microgrid Liquidity</h1>
-        <p class="section-desc">Phase 7.1 benchmarks: Standalone vs. P2P energy trading across 4 battery controllers.</p>
+        <h1 class="section-title">The Four Operational Modes & Financial Profit</h1>
+        <p class="section-desc">
+          Isolating the exact financial dividends of solar self-consumption, battery storage arbitrage, and peer-to-peer game-theoretic coordination over 1,000 Monte Carlo scenarios.
+        </p>
       </div>
 
+      <!-- Mode Descriptions Grid -->
+      <div class="pipeline-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+        <div class="pipeline-card" style="border-top:4px solid #d62728;">
+          <div class="pipeline-card-title">Mode 1: Pure Grid</div>
+          <div class="pipeline-card-desc">
+            100% of demand bought from utility grid @ <strong>$0.30/kWh</strong>. No solar panels, no batteries. The uncoordinated baseline.
+          </div>
+          <div style="font-weight:700;margin-top:8px;font-size:13px;color:#d62728;">Cost: $26.36 / day</div>
+        </div>
+        <div class="pipeline-card" style="border-top:4px solid #ff7f0e;">
+          <div class="pipeline-card-title">Mode 2: Solar + Grid</div>
+          <div class="pipeline-card-desc">
+            Solar self-consumption installed. All deficits bought from grid @ <strong>$0.30</strong>; all surpluses exported @ <strong>$0.08</strong>. No battery.
+          </div>
+          <div style="font-weight:700;margin-top:8px;font-size:13px;color:#ff7f0e;">Cost: $20.83 / day (-21%)</div>
+        </div>
+        <div class="pipeline-card" style="border-top:4px solid #1f77b4;">
+          <div class="pipeline-card-title">Mode 3: Battery + Grid</div>
+          <div class="pipeline-card-desc">
+            Solar + 5.0 kWh battery per home for local self-consumption. No peer-to-peer trading allowed with neighbors.
+          </div>
+          <div style="font-weight:700;margin-top:8px;font-size:13px;color:#1f77b4;">Cost: $16.34 / day (-38%)</div>
+        </div>
+        <div class="pipeline-card" style="border-top:4px solid #2ca02c;">
+          <div class="pipeline-card-title">Mode 4: Proposed Game</div>
+          <div class="pipeline-card-desc">
+            Solar + 5.0 kWh battery + dynamic P2P trading game. Full multi-agent coordination with dynamic price discovery.
+          </div>
+          <div style="font-weight:700;margin-top:8px;font-size:13px;color:#2ca02c;">Cost: $15.80 / day (-40.1%)</div>
+        </div>
+      </div>
+
+      <!-- Profit Factor Decomposition Visualizer -->
       <div class="section-card">
         <div class="section-card-header">
-          <div class="section-card-title">Community Macroeconomic Benchmarks (Phase 7.1)</div>
+          <div class="section-card-title">Community Profit Decomposition: Where does the $10,559.67 come from?</div>
+          <span class="badge badge-success">1,000-Day Cumulative Savings</span>
+        </div>
+        <div class="section-card-body">
+          <div class="waterfall-bar">
+            <div class="waterfall-solar" style="width: 52.3%;">Solar Self-Consumption (52.3% &bull; $5,522.87)</div>
+            <div class="waterfall-batt" style="width: 42.6%;">Battery Arbitrage (42.6% &bull; $4,496.47)</div>
+            <div class="waterfall-p2p" style="width: 5.1%;">P2P Game (5.1% &bull; $540.34)</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:16px;">
+            <div class="chart-container-sm">
+              <canvas id="factorDoughnutChart"></canvas>
+            </div>
+            <div class="chart-container-sm">
+              <canvas id="modesBarChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detailed 1,000-Day Performance Table -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-card-title">Authoritative 1,000-Scenario Financial Performance Matrix</div>
+          <span class="badge badge-neutral">Precomputed Authoritative Results</span>
         </div>
         <div class="section-card-body" style="padding:0;">
           <div class="data-table-wrapper">
-            <table class="data-table">
+            <table class="data-table" id="modes-summary-table">
               <thead>
                 <tr>
-                  <th>Battery Controller</th>
-                  <th>Mode</th>
-                  <th>Grid Import</th>
-                  <th>Grid Export</th>
-                  <th>P2P Traded</th>
-                  <th>Net Financial Cost</th>
+                  <th>Participant</th>
+                  <th>Archetype</th>
+                  <th>Mode 1 (Pure Grid)</th>
+                  <th>Mode 2 (Solar+Grid)</th>
+                  <th>Mode 3 (Batt+Grid)</th>
+                  <th>Mode 4 (P2P Game)</th>
+                  <th>1,000-Day Savings</th>
+                  <th>Bill Reduction</th>
                 </tr>
               </thead>
-              <tbody id="p2p-benchmark-table-body">
-                <tr><td colspan="6" style="text-align:center;">Click tab to load benchmark data...</td></tr>
+              <tbody id="modes-table-body">
+                <tr><td colspan="8" style="text-align:center;padding:16px;">Loading authoritative simulation results...</td></tr>
               </tbody>
             </table>
           </div>
@@ -656,41 +485,560 @@
       </div>
     </div>
 
-    <!-- ==================================================================== -->
-    <!-- TAB PANE: PRECOMPUTED LEDGER & AUDIT                                -->
-    <!-- ==================================================================== -->
-    <div id="pane-ledger" class="tab-pane">
+    <!-- ================================================================== -->
+    <!-- TAB 5: PUBLICATION FIGURES GALLERY                                 -->
+    <!-- ================================================================== -->
+    <div id="pane-gallery" class="tab-pane">
       <div class="section-header">
-        <h1 class="section-title">Precomputed Numerical Conservation Ledger & Audit</h1>
-        <p class="section-desc">Mathematical conservation identities verified to machine precision from Deliverable 1.</p>
+        <h1 class="section-title">Publication Figures & Academic Analysis</h1>
+        <p class="section-desc">
+          High-resolution publication plots generated from the 1,000-scenario Monte Carlo simulation, paired with detailed takeaway explanations for thesis evaluators.
+        </p>
       </div>
 
-      <div class="section-card">
-        <div class="section-card-header">
-          <div class="section-card-title">Numerical Conservation Audit Scorecard</div>
-        </div>
-        <div class="section-card-body" style="padding:0;">
-          <div class="data-table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Conservation Metric</th>
-                  <th>Precomputed Residual</th>
-                  <th>Governing Theoretical Identity</th>
-                  <th>Verification Audit Status</th>
-                </tr>
-              </thead>
-              <tbody id="ledger-table-body">
-                <tr><td colspan="4" style="text-align:center;">Click tab to load ledger data...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+      <div id="figures-gallery-container">
+        <!-- Injected via JavaScript -->
       </div>
     </div>
 
   </main>
 
-  <script src="/static/js/strategic_market.js"></script>
+  <!-- ==================================================================== -->
+  <!-- Client Application Logic                                             -->
+  <!-- ==================================================================== -->
+  <script>
+    // State management
+    const state = {
+      activeTab: 'pane-aim',
+      selectedHouse: 'H001',
+      overview: null,
+      profiles: [],
+      diurnalData: {},
+      modes: [],
+      figures: [],
+      charts: {},
+    };
+
+    // Tab Navigation
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+
+        tab.classList.add('active');
+        const target = tab.getAttribute('data-target');
+        const pane = document.getElementById(target);
+        if (pane) pane.classList.add('active');
+        state.activeTab = target;
+
+        // Trigger chart resizes on tab switch
+        window.dispatchEvent(new Event('resize'));
+      });
+    });
+
+    // Fetch and render initial data
+    async function initDashboard() {
+      try {
+        const [resOverview, resProfiles, resModes, resFigures] = await Promise.all([
+          fetch('/api/system_overview').then(r => r.json()),
+          fetch('/api/customer_profiles').then(r => r.json()),
+          fetch('/api/modes_comparison').then(r => r.json()),
+          fetch('/api/figures_catalog').then(r => r.json()),
+        ]);
+
+        if (resOverview.status === 'success') {
+          state.overview = resOverview.data;
+          renderOverviewKPIs(state.overview);
+        }
+
+        if (resProfiles.status === 'success') {
+          state.profiles = resProfiles.data;
+          renderPersonas(state.profiles);
+        }
+
+        if (resModes.status === 'success') {
+          state.modes = resModes.data;
+          renderModesTable(state.modes);
+          renderModesCharts(state.modes);
+        }
+
+        if (resFigures.status === 'success') {
+          state.figures = resFigures.data;
+          renderFiguresGallery(state.figures);
+        }
+
+        // Load initial diurnal trajectories
+        await loadHouseholdTrajectory(state.selectedHouse);
+        await loadScenarioDemo(state.selectedHouse);
+
+      } catch (err) {
+        console.error('Failed to initialize dashboard data:', err);
+      }
+    }
+
+    // Render Overview KPIs
+    function renderOverviewKPIs(data) {
+      if (!data || !data.financial_outcomes) return;
+      const f = data.financial_outcomes;
+      document.getElementById('kpi-total-profit').innerText = `$${f.total_profit_1000d.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('kpi-bill-reduction').innerText = `${f.bill_reduction_pct.toFixed(1)}%`;
+    }
+
+    // Render Prosumer Personas
+    function renderPersonas(profiles) {
+      const container = document.getElementById('persona-cards-container');
+      if (!container) return;
+
+      container.innerHTML = profiles.map(p => `
+        <div class="persona-card" style="border-top-color: ${p.color};">
+          <div class="persona-header">
+            <span class="persona-name">${p.name} (${p.house_id})</span>
+            <span class="persona-badge">${p.pv_capacity_kwp.toFixed(2)} kWp Solar</span>
+          </div>
+          <div class="persona-archetype">${p.archetype}</div>
+          <p style="font-size:12px;color:var(--text-muted);line-height:1.5;">${p.description}</p>
+          <div class="persona-stats">
+            <div><strong>Avg Demand:</strong> ${p.avg_demand_kwh_day.toFixed(1)} kWh/d</div>
+            <div><strong>Avg Solar:</strong> ${p.avg_solar_kwh_day.toFixed(1)} kWh/d</div>
+            <div><strong>Baseline Cost:</strong> $${p.pure_grid_cost_day.toFixed(2)}/d</div>
+            <div><strong>P2P Cost:</strong> $${p.p2p_game_cost_day.toFixed(2)}/d</div>
+            <div style="grid-column: span 2; font-weight:700; color:var(--seller-green);">
+              1,000-Day Savings: +$${p.total_savings_1000d.toFixed(2)} (${p.bill_reduction_pct.toFixed(1)}% cut)
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Load Diurnal Trajectory for a Household
+    async function loadHouseholdTrajectory(houseId) {
+      try {
+        const res = await fetch(`/api/diurnal_trajectories?house_id=${houseId}`).then(r => r.json());
+        if (res.status !== 'success') return;
+        const d = res.data;
+        state.diurnalData[houseId] = d;
+
+        renderDiurnalChart(d);
+        if (d.battery) {
+          renderBatteryChart(d);
+          renderDynamicPricingChart(d);
+        }
+      } catch (err) {
+        console.error('Error fetching diurnal trajectory:', err);
+      }
+    }
+
+    // Render Diurnal Chart (Solar vs Demand with Uncertainty Bands)
+    function renderDiurnalChart(d) {
+      const ctx = document.getElementById('diurnalTrajectoryChart');
+      if (!ctx) return;
+
+      const labels = d.hours.map(h => `${String(h).padStart(2, '0')}:00`);
+
+      if (state.charts.diurnal) state.charts.diurnal.destroy();
+
+      state.charts.diurnal = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Demand Mean (kWh)',
+              data: d.demand.mean,
+              borderColor: '#d62728',
+              backgroundColor: 'rgba(214, 39, 40, 0.05)',
+              borderWidth: 2.5,
+              tension: 0.3,
+            },
+            {
+              label: 'Demand 90th %ile',
+              data: d.demand.p90,
+              borderColor: 'rgba(214, 39, 40, 0.3)',
+              borderDash: [5, 5],
+              borderWidth: 1.2,
+              fill: false,
+              pointRadius: 0,
+            },
+            {
+              label: 'Demand 10th %ile',
+              data: d.demand.p10,
+              borderColor: 'rgba(214, 39, 40, 0.3)',
+              borderDash: [5, 5],
+              borderWidth: 1.2,
+              fill: '-1',
+              backgroundColor: 'rgba(214, 39, 40, 0.08)',
+              pointRadius: 0,
+            },
+            {
+              label: 'Solar Generation Mean (kWh)',
+              data: d.solar.mean,
+              borderColor: '#ff7f0e',
+              backgroundColor: 'rgba(255, 127, 14, 0.08)',
+              borderWidth: 2.5,
+              tension: 0.3,
+            },
+            {
+              label: 'Solar 90th %ile',
+              data: d.solar.p90,
+              borderColor: 'rgba(255, 127, 14, 0.3)',
+              borderDash: [5, 5],
+              borderWidth: 1.2,
+              fill: false,
+              pointRadius: 0,
+            },
+            {
+              label: 'Solar 10th %ile',
+              data: d.solar.p10,
+              borderColor: 'rgba(255, 127, 14, 0.3)',
+              borderDash: [5, 5],
+              borderWidth: 1.2,
+              fill: '-1',
+              backgroundColor: 'rgba(255, 127, 14, 0.10)',
+              pointRadius: 0,
+            },
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          scales: {
+            y: { title: { display: true, text: 'Energy (kWh)' }, beginAtZero: true },
+            x: { title: { display: true, text: 'Hour of Day (24-Hour Diurnal Cycle)' } }
+          }
+        }
+      });
+    }
+
+    // Render Scenario Generation Demo Chart
+    async function loadScenarioDemo(houseId) {
+      try {
+        const seed = Math.floor(Math.random() * 1000);
+        const res = await fetch(`/api/scenario_generation_demo?house_id=${houseId}&seed=${seed}`).then(r => r.json());
+        if (res.status !== 'success') return;
+        const d = res.data;
+
+        const ctx = document.getElementById('scenarioDemoChart');
+        if (!ctx) return;
+
+        const labels = Array.from({length: 24}, (_, i) => `${String(i).padStart(2, '0')}:00`);
+
+        if (state.charts.scenarioDemo) state.charts.scenarioDemo.destroy();
+
+        const datasets = [
+          {
+            label: 'Historical Ausgrid Base Solar (kWh)',
+            data: d.base_solar,
+            borderColor: '#ff7f0e',
+            borderWidth: 3,
+            fill: false,
+          },
+          {
+            label: 'Synthetic Scenario 1 (Noise Perturbed)',
+            data: d.synthetic_scenarios[0].solar,
+            borderColor: '#2ca02c',
+            borderDash: [4, 4],
+            borderWidth: 1.5,
+            fill: false,
+          },
+          {
+            label: 'Synthetic Scenario 2 (Noise Perturbed)',
+            data: d.synthetic_scenarios[1].solar,
+            borderColor: '#1f77b4',
+            borderDash: [4, 4],
+            borderWidth: 1.5,
+            fill: false,
+          },
+          {
+            label: 'Synthetic Scenario 3 (Noise Perturbed)',
+            data: d.synthetic_scenarios[2].solar,
+            borderColor: '#9467bd',
+            borderDash: [4, 4],
+            borderWidth: 1.5,
+            fill: false,
+          },
+        ];
+
+        state.charts.scenarioDemo = new Chart(ctx, {
+          type: 'line',
+          data: { labels: labels, datasets: datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: { title: { display: true, text: 'Solar Generation (kWh)' }, beginAtZero: true },
+              x: { title: { display: true, text: 'Hour of Day' } }
+            }
+          }
+        });
+      } catch (err) {
+        console.error('Error loading scenario demo:', err);
+      }
+    }
+
+    // Render Battery Dispatch & SOC Trajectory Chart
+    function renderBatteryChart(d) {
+      const ctx = document.getElementById('batteryDispatchChart');
+      if (!ctx || !d.battery) return;
+
+      const labels = d.hours.map(h => `${String(h).padStart(2, '0')}:00`);
+      if (state.charts.battery) state.charts.battery.destroy();
+
+      state.charts.battery = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              type: 'line',
+              label: 'Battery State of Charge (SOC %)',
+              data: d.battery.soc.map(s => s * 100),
+              borderColor: '#2563eb',
+              borderWidth: 3,
+              yAxisID: 'ySOC',
+              tension: 0.3,
+            },
+            {
+              type: 'bar',
+              label: 'Solar Charging Power (kW)',
+              data: d.battery.charge_kw,
+              backgroundColor: 'rgba(5, 150, 105, 0.7)',
+              yAxisID: 'yPower',
+            },
+            {
+              type: 'bar',
+              label: 'Load Discharging Power (kW)',
+              data: d.battery.discharge_kw,
+              backgroundColor: 'rgba(217, 119, 6, 0.7)',
+              yAxisID: 'yPower',
+            },
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            ySOC: {
+              type: 'linear',
+              position: 'right',
+              title: { display: true, text: 'State of Charge (%)' },
+              min: 0,
+              max: 100,
+              grid: { drawOnChartArea: false },
+            },
+            yPower: {
+              type: 'linear',
+              position: 'left',
+              title: { display: true, text: 'Power (kW)' },
+              beginAtZero: true,
+              max: 2.5,
+            },
+            x: { title: { display: true, text: 'Hour of Day' } }
+          }
+        }
+      });
+    }
+
+    // Render Dynamic Price Discovery Chart
+    function renderDynamicPricingChart(d) {
+      const ctx = document.getElementById('dynamicPricingChart');
+      if (!ctx || !d.market) return;
+
+      const labels = d.hours.map(h => `${String(h).padStart(2, '0')}:00`);
+      if (state.charts.pricing) state.charts.pricing.destroy();
+
+      state.charts.pricing = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Dynamic P2P Price ($/kWh)',
+              data: d.market.p2p_price_aud,
+              borderColor: '#059669',
+              borderWidth: 3,
+              tension: 0.2,
+              yAxisID: 'yPrice',
+            },
+            {
+              label: 'Utility Grid Import Tariff ($0.30)',
+              data: Array(24).fill(0.30),
+              borderColor: '#dc2626',
+              borderDash: [5, 5],
+              borderWidth: 1.5,
+              pointRadius: 0,
+              yAxisID: 'yPrice',
+            },
+            {
+              label: 'Utility Feed-in Export Credit ($0.08)',
+              data: Array(24).fill(0.08),
+              borderColor: '#d97706',
+              borderDash: [5, 5],
+              borderWidth: 1.5,
+              pointRadius: 0,
+              yAxisID: 'yPrice',
+            },
+            {
+              type: 'bar',
+              label: 'Community Pool Surplus (kWh)',
+              data: d.market.pool_surplus_kwh,
+              backgroundColor: 'rgba(34, 197, 94, 0.4)',
+              yAxisID: 'yVol',
+            },
+            {
+              type: 'bar',
+              label: 'Community Pool Deficit (kWh)',
+              data: d.market.pool_deficit_kwh,
+              backgroundColor: 'rgba(59, 130, 246, 0.4)',
+              yAxisID: 'yVol',
+            },
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            yPrice: {
+              type: 'linear',
+              position: 'left',
+              title: { display: true, text: 'Electricity Price (AUD / kWh)' },
+              min: 0.05,
+              max: 0.35,
+            },
+            yVol: {
+              type: 'linear',
+              position: 'right',
+              title: { display: true, text: 'Pool Energy (kWh)' },
+              beginAtZero: true,
+              grid: { drawOnChartArea: false },
+            },
+            x: { title: { display: true, text: 'Hour of Day' } }
+          }
+        }
+      });
+    }
+
+    // Render Modes Summary Table
+    function renderModesTable(modes) {
+      const tbody = document.getElementById('modes-table-body');
+      if (!tbody) return;
+
+      tbody.innerHTML = modes.map(r => {
+        const isComm = r.entity === 'COMMUNITY_TOTAL';
+        const rowStyle = isComm ? 'font-weight:700; background:#f1f5f9;' : '';
+        return `
+          <tr style="${rowStyle}">
+            <td>${r.display_name}</td>
+            <td>${r.archetype}</td>
+            <td style="color:#d62728;">$${r.mode1_pure_grid_aud_day.toFixed(2)}/d</td>
+            <td style="color:#ff7f0e;">$${r.mode2_solar_grid_aud_day.toFixed(2)}/d</td>
+            <td style="color:#1f77b4;">$${r.mode3_battery_grid_aud_day.toFixed(2)}/d</td>
+            <td style="color:#2ca02c; font-weight:700;">$${r.mode4_p2p_game_aud_day.toFixed(2)}/d</td>
+            <td style="font-weight:700; color:#059669;">+$${r.total_savings_1000d.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+            <td><span class="badge badge-success">${r.bill_reduction_pct.toFixed(1)}%</span></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Render Modes Charts (Factor Doughnut & Bar Chart)
+    function renderModesCharts(modes) {
+      // Factor breakdown doughnut
+      const ctxDoughnut = document.getElementById('factorDoughnutChart');
+      if (ctxDoughnut) {
+        new Chart(ctxDoughnut, {
+          type: 'doughnut',
+          data: {
+            labels: ['Solar Self-Consumption (52.3%)', 'Battery Storage Arbitrage (42.6%)', 'P2P Trading Coordination (5.1%)'],
+            datasets: [{
+              data: [5522.87, 4496.47, 540.34],
+              backgroundColor: ['#ff7f0e', '#1f77b4', '#2ca02c'],
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              title: { display: true, text: 'Total Profit by Contributing Factor ($10,559.67 AUD)' },
+              legend: { position: 'bottom' }
+            }
+          }
+        });
+      }
+
+      // Modes cost bar chart
+      const ctxBar = document.getElementById('modesBarChart');
+      if (ctxBar) {
+        new Chart(ctxBar, {
+          type: 'bar',
+          data: {
+            labels: ['Pure Grid', 'Solar+Grid', 'Battery+Grid', 'Proposed Game'],
+            datasets: [{
+              label: 'Average Daily Community Electricity Cost (AUD)',
+              data: [26.36, 20.83, 16.34, 15.80],
+              backgroundColor: ['#d62728', '#ff7f0e', '#1f77b4', '#2ca02c'],
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              title: { display: true, text: 'Community Daily Electricity Cost Across 4 Modes' },
+              legend: { display: false }
+            },
+            scales: {
+              y: { title: { display: true, text: 'Cost ($ AUD / day)' }, beginAtZero: true }
+            }
+          }
+        });
+      }
+    }
+
+    // Render Publication Figures Gallery
+    function renderFiguresGallery(figures) {
+      const container = document.getElementById('figures-gallery-container');
+      if (!container) return;
+
+      container.innerHTML = figures.map(fig => `
+        <div class="figure-card">
+          <img class="figure-card-img" src="/figures/${fig.filename}" alt="${fig.title}" loading="lazy">
+          <div class="figure-card-body">
+            <span class="badge badge-info" style="margin-bottom:8px;">${fig.category}</span>
+            <div class="figure-card-title">${fig.title}</div>
+            <p style="font-size:13px;color:var(--text-muted);line-height:1.5;">${fig.summary}</p>
+            <div class="figure-card-takeaway">
+              <strong>Academic Takeaway:</strong> ${fig.takeaway}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Household Pill Buttons Event Listeners
+    document.querySelectorAll('#trajectory-house-pills button').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        document.querySelectorAll('#trajectory-house-pills button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const houseId = btn.getAttribute('data-house');
+        state.selectedHouse = houseId;
+
+        document.getElementById('trajectory-chart-label').innerText =
+          `${houseId === 'COMMUNITY_TOTAL' ? 'Community Aggregate' : 'Household ' + houseId}: 24-Hour Solar vs. Demand Trajectory`;
+
+        await loadHouseholdTrajectory(houseId);
+      });
+    });
+
+    // Resample scenarios button
+    const btnResample = document.getElementById('btn-regenerate-scenarios');
+    if (btnResample) {
+      btnResample.addEventListener('click', () => {
+        loadScenarioDemo(state.selectedHouse);
+      });
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', initDashboard);
+  </script>
 </body>
 </html>
