@@ -150,7 +150,7 @@ class DashboardDataService:
         self._df_phase7_liquidity = pd.read_csv(self.path_phase7_liquidity)
 
         # 6. Phase 8C equilibria
-        self._df_phase8c_hourly = pd.read_csv(self.path_phase8c_hourly)
+        self._df_phase8c_hourly = pd.read_csv(self.path_phase8c_hourly) if self.path_phase8c_hourly.exists() else pd.DataFrame()
         if self.path_phase8c_all_json_gz.exists():
             with gzip.open(self.path_phase8c_all_json_gz, "rt", encoding="utf-8") as f:
                 self._list_phase8c_all_equilibria = json.load(f)
@@ -162,8 +162,8 @@ class DashboardDataService:
             self._dict_phase8c_by_timestamp = {}
 
         # 7. Phase 8D fairness selection & comparison
-        self._df_phase8d_hourly = pd.read_csv(self.path_phase8d_hourly)
-        self._df_phase8d_comparison = pd.read_csv(self.path_phase8d_comparison)
+        self._df_phase8d_hourly = pd.read_csv(self.path_phase8d_hourly) if self.path_phase8d_hourly.exists() else pd.DataFrame()
+        self._df_phase8d_comparison = pd.read_csv(self.path_phase8d_comparison) if self.path_phase8d_comparison.exists() else pd.DataFrame()
 
         self._is_loaded = True
 

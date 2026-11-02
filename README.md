@@ -1,73 +1,90 @@
 # Stochastic Game-Theoretic Optimization under Uncertain Energy Conditions
 
-A microgrid peer-to-peer (P2P) energy trading prototype that integrates:
-1. **LSTM Next-Hour Forecasting** for household demand and rooftop solar generation.
-2. **Monte Carlo Uncertainty Quantification** (1,000 empirical scenarios via residual resampling) enforcing physical constraints ($E \ge 0$).
-3. **2-Household Normal-Form Energy Trading Game** under physical and financial conservation laws.
-4. **Best-Response Analysis & Pure-Strategy Nash Equilibrium** solver.
-5. **Stochastic vs. Deterministic Expected Payoff Optimization** demonstrating coordination gains and microgrid community welfare maximization.
+A multi-agent microgrid peer-to-peer (P2P) energy trading platform that integrates:
+1. **5-Household ($N=5$) Multi-Agent Game-Theoretic Market**: Prosumers dynamically trade rooftop solar generation.
+2. **Battery Energy Storage Systems (BESS)**: 5.0 kWh storage per household with greedy pre-game charge/discharge dispatch and state-of-charge tracking.
+3. **Dynamic P2P Price Discovery**: Market clearing based on real-time aggregate trading pool demand pressure $\lambda = D_{\text{pool}} / S_{\text{pool}}$.
+4. **1,000-Day Monte Carlo Uncertainty Quantification**: 24,000 hourly game rounds preserving weather correlation and renewable volatility.
+5. **Four Operational Modes / Counterfactual Analysis**: Isolates the exact financial dividends of solar, batteries, and P2P game coordination.
 
 ---
 
-## Quick Start: Terminal Demonstration for Teacher Presentation
+## 🚀 Quick Start: Running the 5-Household Flagship System
 
-To run the interactive terminal demonstration with colored outputs and all 5 stages:
+The primary simulation executes 1,000 Monte Carlo simulated days (24,000 hourly market rounds) across the 5 households:
 
 ```bash
-# Run complete demonstration
+# Run full 1,000-day Monte Carlo simulation (computes all financial metrics & generates publication plots)
 python main.py
 
-# Run in step-by-step interactive mode (pause between stages to explain to teacher)
-python main.py --step-by-step
+# Run with customized scenario counts or random seed
+python main.py --scenarios 500 --seed 42
 
-# Run with customized parameters
-python main.py --hour "2013-06-08 10:00:00" --scenarios 1000 --seed 42
+# Generate high-resolution publication plots only
+python generate_monte_carlo_plots.py
 ```
 
 ---
 
-## Demonstration Structure
+## 📊 Four Operational Counterfactual Modes
 
-The terminal output is organized into 5 clear stages tailored for academic presentation:
+To rigorously evaluate the system, the platform compares 4 distinct operating regimes:
 
-1. **Stage 1: Monte Carlo Uncertainty Quantification**
-   - Historical validation residual distributions ($e_t = y_t - \hat{y}_t$).
-   - 1,000 physical realizations preserving demand-solar correlation.
-   - Point forecast vs. scenario mean, std deviation, and 90% prediction intervals.
-   - *Why this matters*: Explains why point forecasts fail under rapid weather variations and why uncertainty modeling is essential.
-
-2. **Stage 2: Game Setup & Normal-Form Payoff Matrix**
-   - Player 1 (H001, Seller) with available surplus ($+1.245\text{ kWh}$).
-   - Player 2 (H002, Buyer) with required deficit ($-1.463\text{ kWh}$).
-   - Retail grid tariffs: Import at $\$0.30/\text{kWh}$, Feed-in export credit at $\$0.08/\text{kWh}$.
-   - Incentive-compatible mid-market P2P price: $\$0.19/\text{kWh}$ (splits the $22¢/\text{kWh}$ grid spread).
-   - $2 \times 2$ payoff matrix in terms of net utility ($U_i = -\text{Net Expenditure}$).
-
-3. **Stage 3: Best-Response Dynamics & Strategic Dominance**
-   - Detailed best-response mappings: $BR_i(a_{-i}) = \arg\max_{a_i} U_i(a_i, a_{-i})$.
-   - Explains unilateral incentive to trade: H001 earns $+137.5\%$ more revenue; H002 reduces electricity cost by $31.2\%$.
-   - Weak dominance of P2P participation.
-
-4. **Stage 4: Nash Equilibrium Calculation & Community Savings**
-   - Formal verification: $(\text{OFFER\_P2P}, \text{ACCEPT\_P2P})$ is the unique Pareto-dominant strict Nash equilibrium.
-   - Financial breakdown: Baseline uncoordinated cost ($\$0.3393$) vs. Coordinated game cost ($\$0.0654$).
-   - Community savings: $\$0.2739$ ($80.7\%$ total microgrid cost reduction).
-
-5. **Stage 5: Stochastic Optimization & Teacher Presentation Takeaways**
-   - Expected Payoff Matrix $E[U_i(a)]$ across 1,000 Monte Carlo scenarios.
-   - Proof of stochastic stability under forecast uncertainty.
-   - 4 Core Academic Takeaways:
-     1. Solves the retail spread distortion.
-     2. Mitigates the solar "duck curve" and transformer reverse power flow.
-     3. Eliminates point-forecast vulnerability.
-     4. Fully decentralized and privacy-preserving design.
+1. **Mode 1: Pure Grid Baseline**: 100% of demand imported from utility grid at $\$0.30/\text{kWh}$ (no solar, no batteries).
+2. **Mode 2: Solar + Grid-Only**: Solar panels installed for self-consumption; all deficits imported at $\$0.30/\text{kWh}$, surpluses exported at $\$0.08/\text{kWh}$ (no battery, no P2P).
+3. **Mode 3: Battery + Grid-Only**: Solar + 5.0 kWh battery per home for local storage arbitrage, but strictly NO P2P trading allowed with neighbors.
+4. **Mode 4: Proposed P2P Game + Battery**: Full multi-agent game-theoretic market with dynamic pricing and battery dispatch.
 
 ---
 
-## Running Tests
+## 📈 Key Findings & Financial Profit Decomposition (1,000 Days)
 
-All 35 unit tests can be executed via:
+From `results/tables/monte_carlo_1000_scenarios_summary.csv`:
+
+| Participant | Pure Grid Cost | Solar+Grid Cost | Battery+Grid Cost | **P2P Game Cost** | **Total Savings** | **Bill Reduction** |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **H001 (Seller)** | $\$6.27/\text{day}$ | $\$4.34/\text{day}$ | $\$3.11/\text{day}$ | **$\$2.98/\text{day}$** | $+\$3,285.63$ | **$52.4\%$** |
+| **H002** | $\$1.80/\text{day}$ | $\$1.17/\text{day}$ | $\$0.60/\text{day}$ | **$\$0.59/\text{day}$** | $+\$1,216.78$ | **$67.4\%$** |
+| **H003** | $\$4.11/\text{day}$ | $\$3.28/\text{day}$ | $\$2.49/\text{day}$ | **$\$2.48/\text{day}$** | $+\$1,633.30$ | **$39.7\%$** |
+| **H004 (Buyer)** | $\$10.12/\text{day}$ | $\$9.32/\text{day}$ | $\$8.59/\text{day}$ | **$\$8.23/\text{day}$** | $+\$1,898.61$ | **$18.8\%$** |
+| **H005** | $\$4.05/\text{day}$ | $\$2.72/\text{day}$ | $\$1.56/\text{day}$ | **$\$1.52/\text{day}$** | $+\$2,525.34$ | **$62.4\%$** |
+| **COMMUNITY TOTAL** | **$\$26.36/\text{day}$** | **$\$20.83/\text{day}$** | **$\$16.34/\text{day}$** | **$\$15.80/\text{day}$** | **$+\$10,559.67$** | **$40.07\%$** |
+
+### Profit Breakdown:
+Across 1,000 days, the community earns **$\$10,559.67\text{ AUD}$** in total financial benefit:
+* **Solar Self-Consumption**: $\$5,522.87$ ($52.3\%$)
+* **Battery Arbitrage**: $\$4,496.47$ ($42.6\%$)
+* **P2P Market Trading**: **$\$540.34$ ($5.1\%$)** *(Pure software coordination dividend with zero extra hardware cost!)*
+
+---
+
+## 🖼️ Publication Figures
+
+Generated into `results/figures/simulate_five_house_monte_carlo/`:
+* `01_daily_cost_comparison_across_modes.png`: Daily electricity costs across the 4 operational modes.
+* `02_total_profit_and_cost_difference.png`: Baseline vs optimized costs & total profit earned per household.
+* `03_p2p_profit_distribution_1000_scenarios.png`: Box plots and Kernel Density Estimation (KDE) probability density of daily profits.
+* `04_hourly_average_community_profit.png`: Diurnal 24-hour profile highlighting the peak midday trading window (11:00 to 15:00).
+* `05_cumulative_community_savings_over_1000_days.png`: Cumulative financial savings trajectory over 1,000 simulated days.
+* `06_total_profit_difference_decomposition.png`: Stacked bar chart decomposing profit into Solar, Battery, and P2P Trading.
+* `07_savings_portion_by_factor.png`: Proportional factor breakdown across households.
+
+---
+
+## 🧪 Running Tests
+
+Execute the test suite via pytest:
 
 ```bash
-python -m pytest
+pytest tests/test_n_player_game_with_battery.py
+```
+
+---
+
+## 📦 Appendix: Legacy Initial 2-Player Prototype (Kept Aside)
+
+The initial 2-player prototype (`demo_prototype.py`, H001 vs H002) was developed early in the project as a preliminary pedagogical proof-of-concept. It is kept aside for historical reference:
+
+```bash
+python main.py --legacy-2player
 ```
