@@ -98,6 +98,7 @@ class DynamicPricingModel:
 
     max_pressure: float = 2.0
     sensitivity: float = 1.0
+    clamp_ceiling: bool = False
 
     def compute_price(
         self,
@@ -111,12 +112,18 @@ class DynamicPricingModel:
             return (grid_import_price_aud + grid_export_credit_aud) / 2.0
 
         pressure = _demand_pressure(total_trading_surplus_kwh, total_trading_deficit_kwh)
-        t = _clamp(self.sensitivity * pressure / self.max_pressure, 0.0, 1.0)
-        price = grid_export_credit_aud + t * (grid_import_price_aud - grid_export_credit_aud)
-        return _clamp(price, grid_export_credit_aud, grid_import_price_aud)
+        if self.clamp_ceiling:
+            t = _clamp(self.sensitivity * pressure / self.max_pressure, 0.0, 1.0)
+            price = grid_export_credit_aud + t * (grid_import_price_aud - grid_export_credit_aud)
+            return _clamp(price, grid_export_credit_aud, grid_import_price_aud)
+        else:
+            t = max(0.0, self.sensitivity * pressure / self.max_pressure)
+            price = grid_export_credit_aud + t * (grid_import_price_aud - grid_export_credit_aud)
+            return max(grid_export_credit_aud, price)
 
     def name(self) -> str:
-        return f"DynamicPricingModel(max_p={self.max_pressure}, sens={self.sensitivity})"
+        ceiling_tag = ", uncapped" if not self.clamp_ceiling else ""
+        return f"DynamicPricingModel(max_p={self.max_pressure}, sens={self.sensitivity}{ceiling_tag})"
 
 
 # Backward-compatible alias
