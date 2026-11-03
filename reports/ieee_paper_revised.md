@@ -141,32 +141,36 @@ As documented in Table II, baseline expenditure under Mode 1 is $26.36/day ($26,
 
 ![Fig. 2. Mean daily electricity cost by household across operational modes](../results/figures/simulate_five_house_monte_carlo/01_daily_cost_comparison_across_modes.png)
 
+![Fig. 3. Cost difference: Baseline Pure Grid expenditure vs Proposed P2P Game with BESS, highlighting total profit earned per participant](../results/figures/simulate_five_house_monte_carlo/02_total_profit_and_cost_difference.png)
+
 ### B. Factor Decomposition of Community Profit
-Total community savings reach $10,559.67 AUD over 1,000 simulated days. Table III breaks down the cumulative contribution of each factor.
+Total community savings reach $10,559.67 AUD over 1,000 simulated days ($10.56 AUD/day). Table III breaks down the cumulative contribution of each factor.
 
 #### TABLE III: Factor Decomposition of Total Savings Over 1,000 Days (AUD)
-| Participant | Total Savings | Solar Dividend | Battery Dividend | P2P Game Dividend |
-| :--- | :---: | :---: | :---: | :---: |
-| **H001** | $3,285.63 | $1,925.69 | $1,238.88 | $121.06 (3.7%) |
-| **H002** | $1,216.78 | $634.92 | $573.14 | $8.73 (0.7%) |
-| **H003** | $1,633.30 | $832.26 | $790.27 | $10.77 (0.7%) |
-| **H004** | $1,898.61 | $800.86 | $735.10 | **$362.65 (19.1%)** |
-| **H005** | $2,525.34 | $1,329.14 | $1,159.08 | $37.13 (1.5%) |
-| **COMMUNITY TOTAL** | **$10,559.67** | **$5,522.87 (52.3%)** | **$4,496.47 (42.6%)** | **$540.34 (5.1%)** |
+| Participant | Total Savings | Solar Dividend | Battery Dividend | P2P Game Dividend | P2P Share (%) |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **H001** | $3,285.63 | $1,925.69 | $1,238.88 | $121.06 | 3.7% |
+| **H002** | $1,216.78 | $634.92 | $573.14 | $8.73 | 0.7% |
+| **H003** | $1,633.30 | $832.26 | $790.27 | $10.77 | 0.7% |
+| **H004** | $1,898.61 | $800.86 | $735.10 | **$362.65** | **19.1%** |
+| **H005** | $2,525.34 | $1,329.14 | $1,159.08 | $37.13 | 1.5% |
+| **COMMUNITY TOTAL** | **$10,559.67** | **$5,522.87 (52.3%)** | **$4,496.47 (42.6%)** | **$540.34 (5.1%)** | **5.1%** |
 
 Crucially, for the heavy consumer H004, P2P market coordination provides $362.65 AUD—accounting for 19.1% of its entire savings. Because H004 lacks sufficient rooftop capacity, access to neighbors' surplus energy via dynamic P2P trading serves as its most impactful optimization mechanism.
 
-![Fig. 3. Total profit difference decomposition by technological factor](../results/figures/simulate_five_house_monte_carlo/06_total_profit_difference_decomposition.png)
+![Fig. 4. Total profit difference decomposition by technological factor](../results/figures/simulate_five_house_monte_carlo/06_total_profit_difference_decomposition.png)
+
+![Fig. 5. Normalized percentage factor breakdown (100% stacked) illustrating the distinct value drivers across participant archetypes](../results/figures/simulate_five_house_monte_carlo/07_savings_portion_by_factor.png)
 
 ### C. Diurnal Hourly Trading and Price Dynamics
-Analysis of the 24-hour diurnal profile confirms that local trading concentrates between 11:00 and 15:00. Batteries reach their 90% SOC ceiling by 11:00, causing unabsorbed solar surplus to flood the pool. Market pressure $\lambda$ drops below 0.5, clearing the P2P price at $0.11–$0.15/kWh. Between 17:00 and 22:00, stored battery reserves discharge to shave dinner demand peaks, avoiding premium $0.30/kWh grid imports.
+Analysis of the 24-hour diurnal profile confirms that local trading concentrates strictly between 11:00 and 15:00. Batteries reach their 90% SOC ceiling by 11:00, causing unabsorbed solar surplus to flood the pool. Market pressure $\lambda$ drops below 0.5, clearing the P2P price at $0.11–$0.15/kWh. Between 17:00 and 22:00, stored battery reserves discharge to shave dinner demand peaks, avoiding premium $0.30/kWh grid imports.
 
-![Fig. 4. Diurnal 24-hour average community profit profile](../results/figures/simulate_five_house_monte_carlo/04_hourly_average_community_profit.png)
+![Fig. 6. Diurnal 24-hour average community profit profile](../results/figures/simulate_five_house_monte_carlo/04_hourly_average_community_profit.png)
 
 ### D. Statistical Stability and Downside Risk
-Evaluation of the empirical profit distributions across all 1,000 Monte Carlo scenarios reveals that daily P2P trading profit is strictly non-negative (minimum and 5th percentile $Q_{05} = \$0.0000/\text{day}$). This guarantees individual rationality and zero downside risk under diverse meteorological conditions.
+Evaluation of the empirical profit distributions across all 1,000 Monte Carlo scenarios reveals that daily P2P trading profit is strictly non-negative (minimum and 5th percentile $Q_{05} = \$0.0000/\text{day}$). This guarantees individual rationality and zero downside risk under diverse meteorological conditions, as illustrated in Fig. 7.
 
-![Fig. 5. Cumulative community savings trajectory over 1,000 simulated days](../results/figures/simulate_five_house_monte_carlo/05_cumulative_community_savings_over_1000_days.png)
+![Fig. 7. Empirical P2P trading profit distributions (boxplots and kernel density estimates) across 1,000 Monte Carlo scenarios](../results/figures/simulate_five_house_monte_carlo/03_p2p_profit_distribution_1000_scenarios.png)
 
 ---
 
