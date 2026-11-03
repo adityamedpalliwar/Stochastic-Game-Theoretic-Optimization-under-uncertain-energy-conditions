@@ -385,31 +385,31 @@ html_content = f"""<!DOCTYPE html>
     
     <div class="authors-container">
         <div class="author-block">
-            <div class="author-name">1st Given Name Surname</div>
-            <div class="author-dept">dept. name of organization (of Affiliation)</div>
-            <div class="author-org">name of organization (of Affiliation)</div>
-            <div>City, Country</div>
-            <div>email address or ORCID</div>
+            <div class="author-name">Aditya</div>
+            <div class="author-dept">Department of Mathematics</div>
+            <div class="author-org">Sardar Vallabhbhai National Institute of Technology (SVNIT)</div>
+            <div>Surat, Gujarat, India</div>
+            <div>u24mc003@amhd.svnit.ac.in</div>
         </div>
         <div class="author-block">
-            <div class="author-name">2nd Given Name Surname</div>
-            <div class="author-dept">dept. name of organization (of Affiliation)</div>
-            <div class="author-org">name of organization (of Affiliation)</div>
-            <div>City, Country</div>
-            <div>email address or ORCID</div>
+            <div class="author-name">Heet</div>
+            <div class="author-dept">Department of Mathematics</div>
+            <div class="author-org">Sardar Vallabhbhai National Institute of Technology (SVNIT)</div>
+            <div>Surat, Gujarat, India</div>
+            <div>u24mc019@amhd.svnit.ac.in</div>
         </div>
         <div class="author-block">
-            <div class="author-name">3rd Given Name Surname</div>
-            <div class="author-dept">dept. name of organization (of Affiliation)</div>
-            <div class="author-org">name of organization (of Affiliation)</div>
-            <div>City, Country</div>
-            <div>email address or ORCID</div>
+            <div class="author-name">Dimpal</div>
+            <div class="author-dept">Department of Mathematics</div>
+            <div class="author-org">Sardar Vallabhbhai National Institute of Technology (SVNIT)</div>
+            <div>Surat, Gujarat, India</div>
+            <div>u24mc020@amhd.svnit.ac.in</div>
         </div>
     </div>
 </div>
 
 <div class="abstract-box">
-    <b><i>Abstract</i>&mdash;Rapid proliferation of residential rooftop photovoltaics and battery energy storage systems necessitates decentralized market mechanisms to overcome retail feed-in tariff distortions. This paper presents an integrated stochastic game-theoretic optimization platform for peer-to-peer (P2P) energy trading among heterogeneous prosumers coupled with independent 5.0 kWh physical battery energy storage systems. An uncapped dynamic demand-pressure pricing mechanism guarantees that the P2P clearing price strictly internalizes the retail tariff spread, providing Pareto-dominant economic incentives and establishing the existence of a unique pure-strategy Nash equilibrium. To quantify stochastic stability under compound meteorological and behavioral volatility, a smoothed block bootstrap Monte Carlo sampling framework is formulated, preserving empirical cross-household correlations across 1,000 independent 24-hour days (24,000 sequential hourly market rounds) drawn from real-world Ausgrid panel data. Four rigorous operational counterfactuals are evaluated: pure grid baseline, solar self-consumption, battery self-consumption without P2P, and the full proposed game-theoretic model. Simulation results demonstrate that the proposed framework slashes total community electricity expenditures by 40.07% ($10,559.67 AUD saved over 1,000 days). Factor decomposition confirms that while solar (52.3%) and battery storage (42.6%) furnish substantial baseline arbitrage, P2P software coordination delivers an additional $540.34 AUD (5.1% of community savings, and up to 19.1% for high-demand consumers) with zero marginal hardware expenditure. Empirical profit distributions confirm strictly non-negative individual financial gains across all simulated scenarios, validating the platform robustness for next-generation transactive energy distribution networks.</b>
+    <b><i>Abstract</i>&mdash;Rapid proliferation of residential rooftop photovoltaics and battery energy storage systems necessitates decentralized market mechanisms to overcome retail feed-in tariff distortions. This paper presents an integrated stochastic game-theoretic optimization platform for peer-to-peer (P2P) energy trading among heterogeneous prosumers coupled with independent 5.0 kWh physical battery energy storage systems. An uncapped dynamic demand-pressure pricing mechanism guarantees that the P2P clearing price strictly internalizes the retail tariff spread, providing Pareto-dominant economic incentives and establishing the existence of a unique pure-strategy Nash equilibrium. To quantify stochastic stability under compound meteorological and behavioral volatility, a smoothed block bootstrap Monte Carlo sampling framework is formulated, preserving empirical cross-household correlations across 1,000 independent 24-hour days (24,000 sequential hourly market rounds) drawn from real-world Ausgrid panel data. Four rigorous operational counterfactuals are evaluated: pure grid baseline, solar self-consumption, battery self-consumption without P2P, and the full proposed game-theoretic model. Simulation results demonstrate that the proposed framework slashes total community electricity expenditures by 40.07%, saving an average of $10.56 AUD/day across the microgrid (reducing daily community energy expenditure from $26.36/day under pure grid reliance down to $15.80/day under coordinated trading). Factor decomposition confirms that while solar self-consumption ($5.52 AUD/day, 52.3%) and battery storage ($4.50 AUD/day, 42.6%) furnish substantial baseline arbitrage, P2P software coordination delivers an additional $0.54 AUD/day (5.1% of community savings, and up to 19.1% for high-demand consumers) with zero marginal hardware expenditure. Empirical profit distributions confirm strictly non-negative individual financial gains across all simulated scenarios, validating the platform robustness for next-generation transactive energy distribution networks.</b>
 </div>
 
 <div class="keywords-box">
@@ -669,73 +669,73 @@ html_content = f"""<!DOCTYPE html>
 </div>
 
 <h3 class="subsection-heading">B. Factor Decomposition of Community Profit</h3>
-<p>Total community savings reach $10,559.67 AUD over 1,000 simulated days ($10.56 AUD/day). Table III breaks down the cumulative contribution of solar self-consumption, battery storage arbitrage, and P2P trading coordination.</p>
+<p>Total community savings average $10.56 AUD/day ($10,559.67 AUD cumulatively across 1,000 simulated days). Table III breaks down the average daily contribution of solar self-consumption, battery storage arbitrage, and P2P trading coordination.</p>
 
-<div class="table-caption">TABLE III: Factor Decomposition of Total Savings Over 1,000 Days (AUD)</div>
+<div class="table-caption">TABLE III: Factor Decomposition of Average Daily Savings (AUD/day)</div>
 <table class="data-table">
     <thead>
         <tr>
             <th>Participant</th>
-            <th>Total Savings</th>
-            <th>Solar Dividend</th>
-            <th>Battery Dividend</th>
-            <th>P2P Game Dividend</th>
+            <th>Daily Savings (AUD/day)</th>
+            <th>Solar Dividend (AUD/day)</th>
+            <th>Battery Dividend (AUD/day)</th>
+            <th>P2P Game Dividend (AUD/day)</th>
             <th>P2P Share (%)</th>
         </tr>
     </thead>
     <tbody>
         <tr>
             <td><b>H001</b></td>
-            <td>$3,285.63</td>
-            <td>$1,925.69</td>
-            <td>$1,238.88</td>
-            <td>$121.06</td>
+            <td>$3.29/day</td>
+            <td>$1.93/day</td>
+            <td>$1.24/day</td>
+            <td>$0.12/day</td>
             <td>3.7%</td>
         </tr>
         <tr>
             <td><b>H002</b></td>
-            <td>$1,216.78</td>
-            <td>$634.92</td>
-            <td>$573.14</td>
-            <td>$8.73</td>
+            <td>$1.22/day</td>
+            <td>$0.63/day</td>
+            <td>$0.57/day</td>
+            <td>$0.01/day</td>
             <td>0.7%</td>
         </tr>
         <tr>
             <td><b>H003</b></td>
-            <td>$1,633.30</td>
-            <td>$832.26</td>
-            <td>$790.27</td>
-            <td>$10.77</td>
+            <td>$1.63/day</td>
+            <td>$0.83/day</td>
+            <td>$0.79/day</td>
+            <td>$0.01/day</td>
             <td>0.7%</td>
         </tr>
         <tr>
             <td><b>H004</b></td>
-            <td>$1,898.61</td>
-            <td>$800.86</td>
-            <td>$735.10</td>
-            <td><b>$362.65</b></td>
+            <td>$1.90/day</td>
+            <td>$0.80/day</td>
+            <td>$0.74/day</td>
+            <td><b>$0.36/day</b></td>
             <td><b>19.1%</b></td>
         </tr>
         <tr>
             <td><b>H005</b></td>
-            <td>$2,525.34</td>
-            <td>$1,329.14</td>
-            <td>$1,159.08</td>
-            <td>$37.13</td>
+            <td>$2.53/day</td>
+            <td>$1.33/day</td>
+            <td>$1.16/day</td>
+            <td>$0.04/day</td>
             <td>1.5%</td>
         </tr>
         <tr style="font-weight:bold; background:#eef4fa;">
             <td>COMMUNITY TOTAL</td>
-            <td>$10,559.67</td>
-            <td>$5,522.87 (52.3%)</td>
-            <td>$4,496.47 (42.6%)</td>
-            <td>$540.34 (5.1%)</td>
+            <td>$10.56/day</td>
+            <td>$5.52/day (52.3%)</td>
+            <td>$4.50/day (42.6%)</td>
+            <td>$0.54/day (5.1%)</td>
             <td>5.1%</td>
         </tr>
     </tbody>
 </table>
 
-<p>Crucially, for the heavy consumer H004, P2P market coordination provides $362.65 AUD&mdash;accounting for 19.1% of its entire financial savings. Because H004 lacks sufficient rooftop PV capacity, access to neighbors' surplus energy via dynamic P2P trading serves as its most impactful optimization mechanism. Meanwhile, community-wide, solar self-consumption provides 52.3% and battery storage provides 42.6% of savings.</p>
+<p>Crucially, for the heavy consumer H004, P2P market coordination provides an average of $0.36 AUD/day ($362.65 AUD over 1,000 days)&mdash;accounting for 19.1% of its entire financial savings. Because H004 lacks sufficient rooftop PV capacity, access to neighbors' surplus energy via dynamic P2P trading serves as its most impactful optimization mechanism. Meanwhile, community-wide, solar self-consumption provides $5.52/day (52.3%) and battery storage provides $4.50/day (42.6%) of savings.</p>
 
 <div class="figure-container">
     <img src="{b64_imgs['fig4']}" alt="Total Profit Decomposition">
@@ -764,11 +764,11 @@ html_content = f"""<!DOCTYPE html>
 </div>
 
 <h2 class="section-heading">VII. Conclusion and Future Work</h2>
-<p>This paper presented an integrated stochastic game-theoretic optimization framework for peer-to-peer energy trading in residential microgrids with distributed battery storage. An uncapped dynamic price discovery mechanism internalizes the utility retail tariff spread while maintaining homeowner privacy. Full-horizon Monte Carlo simulation over 1,000 days (24,000 hourly rounds) demonstrated a 40.07% total electricity expenditure reduction, capturing $10,559.67 AUD in community savings. Factor decomposition proved that while solar (52.3%) and battery storage (42.6%) provide baseline savings, P2P trading delivers an extra $540.34 AUD (5.1%) pure software dividend with zero extra hardware cost, providing up to 19.1% of savings for heavy consumers.</p>
+<p>This paper presented an integrated stochastic game-theoretic optimization framework for peer-to-peer energy trading in residential microgrids with distributed battery storage. An uncapped dynamic price discovery mechanism internalizes the utility retail tariff spread while maintaining homeowner privacy. Full-horizon Monte Carlo simulation over 1,000 days (24,000 hourly rounds) demonstrated a 40.07% total electricity expenditure reduction, capturing an average of $10.56 AUD/day in community savings ($10,559.67 AUD across the 1,000-day evaluation horizon). Factor decomposition proved that while solar self-consumption ($5.52/day, 52.3%) and battery storage ($4.50/day, 42.6%) provide baseline savings, P2P trading delivers an extra $0.54 AUD/day (5.1% software dividend, totaling $540.34 AUD) with zero extra hardware cost, providing up to 19.1% of savings for heavy consumers.</p>
 <p>Future work will extend the framework to incorporate distribution network voltage constraints, reactive power compensation, continuous double-sided auction bidding, and community scaling to 100+ prosumer nodes.</p>
 
 <h2 class="section-heading">Acknowledgment</h2>
-<p>The authors express their sincere gratitude to their project supervisor and the Department of Electrical Engineering for their constructive feedback and continuous mentorship throughout this research.</p>
+<p>The authors express their sincere gratitude to their project supervisor, faculty members, and the Department of Mathematics, Sardar Vallabhbhai National Institute of Technology (SVNIT), Surat, for their constructive guidance, research facilities, and continuous mentorship throughout this research.</p>
 
 <h2 class="section-heading">References</h2>
 <table class="ref-table">
@@ -831,28 +831,28 @@ html_content = f"""<!DOCTYPE html>
 # ----------------- MARKDOWN CONTENT -----------------
 md_content = """# Stochastic Game-Theoretic Optimization for Peer-to-Peer Energy Trading with Distributed Battery Storage under Uncertainty
 
-**1st Given Name Surname**  
-dept. name of organization (of Affiliation)  
-*name of organization (of Affiliation)*  
-City, Country  
-email address or ORCID  
+**Aditya**  
+Department of Mathematics  
+*Sardar Vallabhbhai National Institute of Technology (SVNIT)*  
+Surat, Gujarat, India  
+u24mc003@amhd.svnit.ac.in  
 
-**2nd Given Name Surname**  
-dept. name of organization (of Affiliation)  
-*name of organization (of Affiliation)*  
-City, Country  
-email address or ORCID  
+**Heet**  
+Department of Mathematics  
+*Sardar Vallabhbhai National Institute of Technology (SVNIT)*  
+Surat, Gujarat, India  
+u24mc019@amhd.svnit.ac.in  
 
-**3rd Given Name Surname**  
-dept. name of organization (of Affiliation)  
-*name of organization (of Affiliation)*  
-City, Country  
-email address or ORCID  
+**Dimpal**  
+Department of Mathematics  
+*Sardar Vallabhbhai National Institute of Technology (SVNIT)*  
+Surat, Gujarat, India  
+u24mc020@amhd.svnit.ac.in  
 
 ---
 
 ### Abstract
-Rapid proliferation of residential rooftop photovoltaics and battery energy storage systems necessitates decentralized market mechanisms to overcome retail feed-in tariff distortions. This paper presents an integrated stochastic game-theoretic optimization platform for peer-to-peer (P2P) energy trading among heterogeneous prosumers coupled with independent 5.0 kWh physical battery energy storage systems. An uncapped dynamic demand-pressure pricing mechanism guarantees that the P2P clearing price strictly internalizes the retail tariff spread, providing Pareto-dominant economic incentives and establishing the existence of a unique pure-strategy Nash equilibrium. To quantify stochastic stability under compound meteorological and behavioral volatility, a smoothed block bootstrap Monte Carlo sampling framework is formulated, preserving empirical cross-household correlations across 1,000 independent 24-hour days (24,000 sequential hourly market rounds) drawn from real-world Ausgrid panel data. Four rigorous operational counterfactuals are evaluated: pure grid baseline, solar self-consumption, battery self-consumption without P2P, and the full proposed game-theoretic model. Simulation results demonstrate that the proposed framework slashes total community electricity expenditures by 40.07% ($10,559.67 AUD saved over 1,000 days). Factor decomposition confirms that while solar (52.3%) and battery storage (42.6%) furnish substantial baseline arbitrage, P2P software coordination delivers an additional $540.34 AUD (5.1% of community savings, and up to 19.1% for high-demand consumers) with zero marginal hardware expenditure. Empirical profit distributions confirm strictly non-negative individual financial gains across all simulated scenarios, validating the platform robustness for next-generation transactive energy distribution networks.
+Rapid proliferation of residential rooftop photovoltaics and battery energy storage systems necessitates decentralized market mechanisms to overcome retail feed-in tariff distortions. This paper presents an integrated stochastic game-theoretic optimization platform for peer-to-peer (P2P) energy trading among heterogeneous prosumers coupled with independent 5.0 kWh physical battery energy storage systems. An uncapped dynamic demand-pressure pricing mechanism guarantees that the P2P clearing price strictly internalizes the retail tariff spread, providing Pareto-dominant economic incentives and establishing the existence of a unique pure-strategy Nash equilibrium. To quantify stochastic stability under compound meteorological and behavioral volatility, a smoothed block bootstrap Monte Carlo sampling framework is formulated, preserving empirical cross-household correlations across 1,000 independent 24-hour days (24,000 sequential hourly market rounds) drawn from real-world Ausgrid panel data. Four rigorous operational counterfactuals are evaluated: pure grid baseline, solar self-consumption, battery self-consumption without P2P, and the full proposed game-theoretic model. Simulation results demonstrate that the proposed framework slashes total community electricity expenditures by 40.07%, saving an average of $10.56 AUD/day across the microgrid (reducing daily community energy expenditure from $26.36/day under pure grid reliance down to $15.80/day under coordinated trading). Factor decomposition confirms that while solar self-consumption ($5.52 AUD/day, 52.3%) and battery storage ($4.50 AUD/day, 42.6%) furnish substantial baseline arbitrage, P2P software coordination delivers an additional $0.54 AUD/day (5.1% of community savings, and up to 19.1% for high-demand consumers) with zero marginal hardware expenditure. Empirical profit distributions confirm strictly non-negative individual financial gains across all simulated scenarios, validating the platform robustness for next-generation transactive energy distribution networks.
 
 ### Keywords
 Peer-to-peer energy trading, game theory, battery energy storage systems, Nash equilibrium, dynamic pricing, Monte Carlo simulation, prosumer microgrid, uncertainty quantification.
@@ -880,7 +880,7 @@ To address these challenges, this paper presents an integrated stochastic game-t
 ## II. SYSTEM ARCHITECTURE AND DATASET
 
 ### A. Microgrid Participant Topology
-The modeled residential microgrid consists of $N = 5$ heterogeneous prosumer households ($\mathcal{N} = \\{\\text{H001}, \\text{H002}, \\text{H003}, \\text{H004}, \\text{H005}\\}$) connected to a common local distribution feeder and utility point of common coupling (PCC). Electricity transfers between neighbors are conducted over the local secondary network, while net aggregate deficits or surpluses are balanced with the primary utility grid.
+The modeled residential microgrid consists of $N = 5$ heterogeneous prosumer households ($\\\\mathcal{N} = \\{\\text{H001}, \\text{H002}, \\text{H003}, \\text{H004}, \\text{H005}\\}$) connected to a common local distribution feeder and utility point of common coupling (PCC). Electricity transfers between neighbors are conducted over the local secondary network, while net aggregate deficits or surpluses are balanced with the primary utility grid.
 
 ### B. Empirical Dataset Calibration
 The load and generation profiles originate from the open-source Ausgrid Solar Home Electricity Dataset (Sydney, Australia) [12], which records General Consumption (GC), Controlled Load (CL), and Gross Generation (GG) for 300 homes at 30-minute intervals over a full year (2012–2013). Readings were aggregated into clean hourly intervals ($\\Delta t = 1.0\\text{ h}$).
@@ -975,19 +975,19 @@ As documented in Table II, baseline expenditure under Mode 1 is $26.36/day ($26,
 ![Fig. 3. Cost difference: Baseline Pure Grid expenditure vs Proposed P2P Game with BESS, highlighting total profit earned per participant](../results/figures/simulate_five_house_monte_carlo/02_total_profit_and_cost_difference.png)
 
 ### B. Factor Decomposition of Community Profit
-Total community savings reach $10,559.67 AUD over 1,000 simulated days ($10.56 AUD/day). Table III breaks down the cumulative contribution of each factor.
+Total community savings average $10.56 AUD/day ($10,559.67 AUD cumulatively across 1,000 simulated days). Table III breaks down the average daily contribution of each factor.
 
-#### TABLE III: Factor Decomposition of Total Savings Over 1,000 Days (AUD)
-| Participant | Total Savings | Solar Dividend | Battery Dividend | P2P Game Dividend | P2P Share (%) |
+#### TABLE III: Factor Decomposition of Average Daily Savings (AUD/day)
+| Participant | Daily Savings (AUD/day) | Solar Dividend (AUD/day) | Battery Dividend (AUD/day) | P2P Game Dividend (AUD/day) | P2P Share (%) |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **H001** | $3,285.63 | $1,925.69 | $1,238.88 | $121.06 | 3.7% |
-| **H002** | $1,216.78 | $634.92 | $573.14 | $8.73 | 0.7% |
-| **H003** | $1,633.30 | $832.26 | $790.27 | $10.77 | 0.7% |
-| **H004** | $1,898.61 | $800.86 | $735.10 | **$362.65** | **19.1%** |
-| **H005** | $2,525.34 | $1,329.14 | $1,159.08 | $37.13 | 1.5% |
-| **COMMUNITY TOTAL** | **$10,559.67** | **$5,522.87 (52.3%)** | **$4,496.47 (42.6%)** | **$540.34 (5.1%)** | **5.1%** |
+| **H001** | $3.29/day | $1.93/day | $1.24/day | $0.12/day | 3.7% |
+| **H002** | $1.22/day | $0.63/day | $0.57/day | $0.01/day | 0.7% |
+| **H003** | $1.63/day | $0.83/day | $0.79/day | $0.01/day | 0.7% |
+| **H004** | $1.90/day | $0.80/day | $0.74/day | **$0.36/day** | **19.1%** |
+| **H005** | $2.53/day | $1.33/day | $1.16/day | $0.04/day | 1.5% |
+| **COMMUNITY TOTAL** | **$10.56/day** | **$5.52/day (52.3%)** | **$4.50/day (42.6%)** | **$0.54/day (5.1%)** | **5.1%** |
 
-Crucially, for the heavy consumer H004, P2P market coordination provides $362.65 AUD—accounting for 19.1% of its entire savings. Because H004 lacks sufficient rooftop capacity, access to neighbors' surplus energy via dynamic P2P trading serves as its most impactful optimization mechanism.
+Crucially, for the heavy consumer H004, P2P market coordination provides an average of $0.36 AUD/day ($362.65 AUD over 1,000 days)—accounting for 19.1% of its entire savings. Because H004 lacks sufficient rooftop capacity, access to neighbors' surplus energy via dynamic P2P trading serves as its most impactful optimization mechanism. Meanwhile, community-wide, solar self-consumption provides $5.52/day (52.3%) and battery storage provides $4.50/day (42.6%) of savings.
 
 ![Fig. 4. Total profit difference decomposition by technological factor](../results/figures/simulate_five_house_monte_carlo/06_total_profit_difference_decomposition.png)
 
@@ -1007,14 +1007,14 @@ Evaluation of the empirical profit distributions across all 1,000 Monte Carlo sc
 
 ## VII. CONCLUSION AND FUTURE WORK
 
-This paper presented an integrated stochastic game-theoretic optimization framework for peer-to-peer energy trading in residential microgrids with distributed battery storage. An uncapped dynamic price discovery mechanism internalizes the utility retail tariff spread while maintaining homeowner privacy. Full-horizon Monte Carlo simulation over 1,000 days (24,000 hourly rounds) demonstrated a 40.07% total electricity expenditure reduction, capturing $10,559.67 AUD in community savings. Factor decomposition proved that while solar (52.3%) and battery storage (42.6%) provide baseline savings, P2P trading delivers an extra $540.34 AUD (5.1%) pure software dividend with zero extra hardware cost, providing up to 19.1% of savings for heavy consumers.
+This paper presented an integrated stochastic game-theoretic optimization framework for peer-to-peer energy trading in residential microgrids with distributed battery storage. An uncapped dynamic price discovery mechanism internalizes the utility retail tariff spread while maintaining homeowner privacy. Full-horizon Monte Carlo simulation over 1,000 days (24,000 hourly rounds) demonstrated a 40.07% total electricity expenditure reduction, capturing an average of $10.56 AUD/day in community savings ($10,559.67 AUD across the 1,000-day evaluation horizon). Factor decomposition proved that while solar self-consumption ($5.52/day, 52.3%) and battery storage ($4.50/day, 42.6%) provide baseline savings, P2P trading delivers an extra $0.54 AUD/day (5.1% software dividend, totaling $540.34 AUD) with zero extra hardware cost, providing up to 19.1% of savings for heavy consumers.
 
 Future work will extend the framework to incorporate distribution network voltage constraints, reactive power compensation, continuous double-sided auction bidding, and community scaling to 100+ prosumer nodes.
 
 ---
 
 ## ACKNOWLEDGMENT
-The authors express their sincere gratitude to their project supervisor and the Department of Electrical Engineering for their constructive feedback and continuous mentorship throughout this research.
+The authors express their sincere gratitude to their project supervisor, faculty members, and the Department of Mathematics, Sardar Vallabhbhai National Institute of Technology (SVNIT), Surat, for their constructive guidance, research facilities, and continuous mentorship throughout this research.
 
 ---
 
