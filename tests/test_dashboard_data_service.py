@@ -137,7 +137,7 @@ def test_scenario_generation_demo(data_service: DashboardDataService) -> None:
 def test_figures_catalog(data_service: DashboardDataService) -> None:
     """Validate publication figures catalog."""
     catalog = data_service.get_figures_catalog()
-    assert len(catalog) == 7
+    assert len(catalog) == 6
     ids = [f["id"] for f in catalog]
     assert "plot_01" in ids
     assert "plot_06" in ids

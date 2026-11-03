@@ -104,9 +104,9 @@
       <!-- Headline KPI Cards -->
       <div class="kpi-grid">
         <div class="kpi-card kpi-volume">
-          <div class="kpi-title">Total Community Profit</div>
-          <div class="kpi-value" id="kpi-total-profit">$10,559.67</div>
-          <div class="kpi-stat-sub">Across 1,000 simulated days (AUD)</div>
+          <div class="kpi-title">Average Community Profit / Day</div>
+          <div class="kpi-value" id="kpi-total-profit">$10.56</div>
+          <div class="kpi-stat-sub">On average profit / day (AUD)</div>
         </div>
         <div class="kpi-card kpi-vwap">
           <div class="kpi-title">Total Bill Reduction</div>
@@ -216,7 +216,7 @@
             </div>
 
             <div style="background:#f8fafc;border:1px solid var(--border-light);border-radius:8px;padding:14px;">
-              <div style="font-weight:700;color:var(--seller-green);margin-bottom:6px;font-size:14px;">3. Final Output = Average of 1,000 Days</div>
+              <div style="font-weight:700;color:var(--seller-green);margin-bottom:6px;font-size:14px;">3. Final Output = Average Across 1,000 Simulated Days</div>
               <p style="font-size:12px;color:var(--text-muted);line-height:1.5;">
                 • The headline daily numbers are the <strong>average of all 1,000 simulated days</strong>:<br>
                 &nbsp;&nbsp;<code style="background:#e2e8f0;padding:2px 6px;border-radius:3px;font-size:11px;">Avg Daily Cost = (1/1000) &sum; Daily Cost<sub>s</sub></code><br>
@@ -435,14 +435,14 @@
       <!-- Profit Factor Decomposition Visualizer -->
       <div class="section-card">
         <div class="section-card-header">
-          <div class="section-card-title">Community Profit Decomposition: Where does the $10,559.67 come from?</div>
-          <span class="badge badge-success">1,000-Day Cumulative Savings</span>
+          <div class="section-card-title">Community Daily Profit Decomposition: Where does the $10.56/day come from?</div>
+          <span class="badge badge-success">Average Daily Savings Breakdown</span>
         </div>
         <div class="section-card-body">
           <div class="waterfall-bar">
-            <div class="waterfall-solar" style="width: 52.3%;">Solar Self-Consumption (52.3% &bull; $5,522.87)</div>
-            <div class="waterfall-batt" style="width: 42.6%;">Battery Arbitrage (42.6% &bull; $4,496.47)</div>
-            <div class="waterfall-p2p" style="width: 5.1%;">P2P Game (5.1% &bull; $540.34)</div>
+            <div class="waterfall-solar" style="width: 52.3%;">Solar Self-Consumption (52.3% &bull; $5.52/day)</div>
+            <div class="waterfall-batt" style="width: 42.6%;">Battery Arbitrage (42.6% &bull; $4.50/day)</div>
+            <div class="waterfall-p2p" style="width: 5.1%;">P2P Game (5.1% &bull; $0.54/day)</div>
           </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:16px;">
             <div class="chart-container-sm">
@@ -472,7 +472,7 @@
                   <th>Mode 2 (Solar+Grid)</th>
                   <th>Mode 3 (Batt+Grid)</th>
                   <th>Mode 4 (P2P Game)</th>
-                  <th>1,000-Day Savings</th>
+                  <th>Daily Savings</th>
                   <th>Bill Reduction</th>
                 </tr>
               </thead>
@@ -580,7 +580,8 @@
     function renderOverviewKPIs(data) {
       if (!data || !data.financial_outcomes) return;
       const f = data.financial_outcomes;
-      document.getElementById('kpi-total-profit').innerText = `$${f.total_profit_1000d.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      const dailyProfit = f.daily_savings !== undefined ? f.daily_savings : (f.total_profit_1000d / 1000);
+      document.getElementById('kpi-total-profit').innerText = `$${dailyProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
       document.getElementById('kpi-bill-reduction').innerText = `${f.bill_reduction_pct.toFixed(1)}%`;
     }
 
@@ -603,7 +604,7 @@
             <div><strong>Baseline Cost:</strong> $${p.pure_grid_cost_day.toFixed(2)}/d</div>
             <div><strong>P2P Cost:</strong> $${p.p2p_game_cost_day.toFixed(2)}/d</div>
             <div style="grid-column: span 2; font-weight:700; color:var(--seller-green);">
-              1,000-Day Savings: +$${p.total_savings_1000d.toFixed(2)} (${p.bill_reduction_pct.toFixed(1)}% cut)
+              Avg Daily Savings: +$${((p.daily_savings !== undefined && p.daily_savings !== null) ? p.daily_savings : (p.total_savings_1000d / 1000)).toFixed(2)}/d (${p.bill_reduction_pct.toFixed(1)}% cut)
             </div>
           </div>
         </div>
@@ -934,7 +935,7 @@
             <td style="color:#ff7f0e;">$${r.mode2_solar_grid_aud_day.toFixed(2)}/d</td>
             <td style="color:#1f77b4;">$${r.mode3_battery_grid_aud_day.toFixed(2)}/d</td>
             <td style="color:#2ca02c; font-weight:700;">$${r.mode4_p2p_game_aud_day.toFixed(2)}/d</td>
-            <td style="font-weight:700; color:#059669;">+$${r.total_savings_1000d.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+            <td style="font-weight:700; color:#059669;">+$${((r.daily_savings_aud !== undefined && r.daily_savings_aud !== null) ? r.daily_savings_aud : (r.total_savings_1000d / 1000)).toFixed(2)}/d</td>
             <td><span class="badge badge-success">${r.bill_reduction_pct.toFixed(1)}%</span></td>
           </tr>
         `;
@@ -951,7 +952,7 @@
           data: {
             labels: ['Solar Self-Consumption (52.3%)', 'Battery Storage Arbitrage (42.6%)', 'P2P Trading Coordination (5.1%)'],
             datasets: [{
-              data: [5522.87, 4496.47, 540.34],
+              data: [5.52, 4.50, 0.54],
               backgroundColor: ['#ff7f0e', '#1f77b4', '#2ca02c'],
             }]
           },
@@ -959,8 +960,15 @@
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-              title: { display: true, text: 'Total Profit by Contributing Factor ($10,559.67 AUD)' },
-              legend: { position: 'bottom' }
+              title: { display: true, text: 'Daily Profit by Contributing Factor ($10.56 AUD/day)' },
+              legend: { position: 'bottom' },
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    return ` ${ctx.label}: $${ctx.raw.toFixed(2)}/day`;
+                  }
+                }
+              }
             }
           }
         });

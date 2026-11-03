@@ -343,6 +343,7 @@ class DashboardDataService:
                 "avg_solar_kwh_day": float(summary_row.get("Avg_Solar_kWh", 0.0)),
                 "pure_grid_cost_day": float(summary_row.get("Pure_Grid_Cost_AUD", 0.0)),
                 "p2p_game_cost_day": float(summary_row.get("Game_Cost_AUD", 0.0)),
+                "daily_savings": float(summary_row.get("Savings_over_Pure_Grid_AUD", 0.0)),
                 "total_savings_1000d": float(summary_row.get("Total_Profit_1000d_AUD", 0.0)),
                 "bill_reduction_pct": float(summary_row.get("Bill_Reduction_Pct", 0.0)),
             }))
@@ -411,6 +412,7 @@ class DashboardDataService:
                 "mode2_solar_grid_aud_day": float(r.get("Solar_Grid_Cost_AUD", 0.0)),
                 "mode3_battery_grid_aud_day": float(r.get("Batt_Grid_Cost_AUD", 0.0)),
                 "mode4_p2p_game_aud_day": float(r.get("Game_Cost_AUD", 0.0)),
+                "daily_savings_aud": float(r.get("Savings_over_Pure_Grid_AUD", 0.0)),
                 "total_savings_1000d": float(r.get("Total_Profit_1000d_AUD", 0.0)),
                 "bill_reduction_pct": float(r.get("Bill_Reduction_Pct", 0.0)),
                 "solar_profit_1000d": float(r.get("Total_Solar_Profit_1000d_AUD", 0.0)),
@@ -525,19 +527,8 @@ class DashboardDataService:
             },
             {
                 "id": "plot_05",
-                "filename": "05_cumulative_community_savings_over_1000_days.png",
-                "title": "Plot 05: Cumulative Community Savings Trajectory Over 1,000 Days",
-                "category": "Long-Term Value",
-                "summary": "Steadily rising cumulative savings curve reaching $10,559.67 AUD over the 1,000-day evaluation horizon.",
-                "takeaway": (
-                    "The steady linear slope confirms that the P2P game provides stable, compounding dividends "
-                    "under diverse seasonal and weather conditions."
-                ),
-            },
-            {
-                "id": "plot_06",
                 "filename": "06_total_profit_difference_decomposition.png",
-                "title": "Plot 06: Total Profit Decomposition by Technology Factor",
+                "title": "Plot 05: Total Profit Decomposition by Technology Factor",
                 "category": "Factor Contribution",
                 "summary": "Stacked bar chart decomposing total savings into Solar Self-Consumption, Battery Arbitrage, and P2P Trading.",
                 "takeaway": (
@@ -546,9 +537,9 @@ class DashboardDataService:
                 ),
             },
             {
-                "id": "plot_07",
+                "id": "plot_06",
                 "filename": "07_savings_portion_by_factor.png",
-                "title": "Plot 07: Percentage Factor Breakdown Across Households",
+                "title": "Plot 06: Percentage Factor Breakdown Across Households",
                 "category": "Factor Contribution",
                 "summary": "100% normalized stacked bar chart showing the relative importance of solar, batteries, and P2P trading for each home.",
                 "takeaway": (

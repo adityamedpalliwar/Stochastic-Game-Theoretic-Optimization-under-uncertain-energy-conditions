@@ -121,7 +121,7 @@ def test_figures_catalog_endpoint(client: FlaskClient) -> None:
     assert res.status_code == 200
     body = res.get_json()
     assert body["status"] == "success"
-    assert len(body["data"]) == 7
+    assert len(body["data"]) == 6
 
 
 def test_serve_figure_endpoint(client: FlaskClient) -> None:

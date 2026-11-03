@@ -99,9 +99,9 @@ def plot_comparisons(
     saved_paths.append(p1_path)
 
     # =========================================================================
-    # PLOT 2: Total Amount of Profit & Cost Difference Through Bar Plots
+    # PLOT 2: Cost Difference Bar Plot (Baseline vs Optimized)
     # =========================================================================
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6.5))
+    fig, ax1 = plt.subplots(figsize=(10, 6.2))
 
     pure_totals = df_summary["Pure_Grid_Cost_AUD"].to_numpy() * num_scenarios
     game_totals = df_summary["Game_Cost_AUD"].to_numpy() * num_scenarios
@@ -111,7 +111,7 @@ def plot_comparisons(
     game_daily = df_summary["Game_Cost_AUD"].to_numpy()
     diff_profit_daily = pure_daily - game_daily
 
-    # Panel 1: Cost Difference Bar Plot (Baseline vs P2P Game & Difference = Total Profit)
+    # Cost Difference Bar Plot (Baseline vs P2P Game & Difference = Total Profit)
     x_sub = np.arange(len(entities))
     w_sub = 0.27
 
@@ -155,7 +155,7 @@ def plot_comparisons(
             textcoords="offset points",
             ha="center",
             va="bottom",
-            fontsize=7.8,
+            fontsize=8.0,
             fontweight="bold",
             color="darkgreen",
         )
@@ -169,7 +169,7 @@ def plot_comparisons(
             textcoords="offset points",
             ha="center",
             va="bottom",
-            fontsize=7.5,
+            fontsize=7.8,
         )
 
     for bar in b_game:
@@ -181,7 +181,7 @@ def plot_comparisons(
             textcoords="offset points",
             ha="center",
             va="bottom",
-            fontsize=7.5,
+            fontsize=7.8,
         )
 
     ax1.set_title(f"Cost Difference: Baseline vs Optimized ({num_scenarios:,} Days)\nDifference = Total Profit Earned", fontweight="bold")
@@ -193,38 +193,9 @@ def plot_comparisons(
     ax1.legend(loc="upper left", framealpha=0.95)
     ax1.set_ylim(0, max(pure_totals) * 1.25)
 
-    # Panel 2: Total Amount of Profit Earned per Household
-    comm_total_profit = diff_profit_totals[-1]
-    b_profit = ax2.bar(display_names, diff_profit_totals, color=colors, alpha=0.85, edgecolor="black", linewidth=0.8)
-
-    for i, (bar, d_val) in enumerate(zip(b_profit, diff_profit_daily)):
-        h = bar.get_height()
-        ann_val = d_val * 365.25
-        share = (h / comm_total_profit * 100) if i < len(player_ids) else 100.0
-        label_text = f"${h:,.2f} total\n(${d_val:.2f}/day | ${ann_val:,.0f}/yr)\n[{share:.1f}% share]"
-        ax2.annotate(
-            label_text,
-            xy=(bar.get_x() + bar.get_width() / 2, h),
-            xytext=(0, 4),
-            textcoords="offset points",
-            ha="center",
-            va="bottom",
-            fontsize=7.8,
-            fontweight="bold",
-        )
-
-    ax2.set_title(f"Total Amount of Profit Earned by Each Household ({num_scenarios:,} Days)\nShowing Profit Differences Across Participants", fontweight="bold")
-    ax2.set_xlabel("Market Participant")
-    ax2.set_ylabel("Total Profit Earned (AUD)")
-    ax2.set_xticks(range(len(entities)))
-    ax2.set_xticklabels(display_names, rotation=15, ha="right", fontweight="semibold")
-    ax2.grid(True, alpha=0.25, axis="y")
-    ax2.set_ylim(0, max(diff_profit_totals) * 1.25)
-
     p2_path = fig_dir / "02_total_profit_and_cost_difference.png"
     plt.tight_layout()
     plt.savefig(p2_path, bbox_inches="tight")
-    # Also save as 02_financial_savings_and_p2p_profit.png to maintain existing link
     plt.savefig(fig_dir / "02_financial_savings_and_p2p_profit.png", bbox_inches="tight")
     plt.close()
     saved_paths.append(p2_path)
