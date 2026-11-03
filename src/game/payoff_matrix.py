@@ -339,8 +339,8 @@ def dispatch_battery_pre_game(
 class NPlayerPayoffMatrix:
     """Payoff matrix for an N-player energy trading game with battery support.
 
-    Each player chooses one of their available actions (``'TRADE'`` or
-    ``'GRID_ONLY'``).  Payoffs are stored as N separate N-dimensional ndarrays,
+    Each player chooses one of their available actions (``'P2P_TRADE'``,
+    ``'GRID_ONLY'``, or ``'SELF_SUFFICIENT'``).  Payoffs are stored as N separate N-dimensional ndarrays,
     one per player, indexed by the joint action profile.
 
     Battery accounting
@@ -465,7 +465,12 @@ def build_n_player_payoff_matrix(
         )
         pricing_model = MidMarketPricing()  # for .name() only
 
-    player_actions: List[List[str]] = [["TRADE", "GRID_ONLY"] for _ in range(N)]
+    player_actions: List[List[str]] = []
+    for k in range(N):
+        if surpluses[k] <= 1e-4 and deficits[k] <= 1e-4:
+            player_actions.append(["SELF_SUFFICIENT"])
+        else:
+            player_actions.append(["P2P_TRADE", "GRID_ONLY"])
     shape: Tuple[int, ...] = tuple(len(player_actions[k]) for k in range(N))
 
     payoff_arrays: List[np.ndarray]  = [np.zeros(shape, dtype=float) for _ in range(N)]
@@ -479,11 +484,11 @@ def build_n_player_payoff_matrix(
 
         trading_surplus_players = [
             k for k in range(N)
-            if actions_in_profile[k] == "TRADE" and surpluses[k] > 0.0
+            if actions_in_profile[k] in ("P2P_TRADE", "TRADE") and surpluses[k] > 0.0
         ]
         trading_deficit_players = [
             k for k in range(N)
-            if actions_in_profile[k] == "TRADE" and deficits[k] > 0.0
+            if actions_in_profile[k] in ("P2P_TRADE", "TRADE") and deficits[k] > 0.0
         ]
 
         total_trading_surplus = sum(surpluses[k] for k in trading_surplus_players)

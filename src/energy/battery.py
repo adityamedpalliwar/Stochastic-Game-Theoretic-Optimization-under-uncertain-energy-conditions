@@ -46,7 +46,7 @@ class BatteryStorage:
         discharge_efficiency: float = 0.95,
         min_soc: float = 0.10,
         max_soc: float = 0.90,
-        initial_soc: float = 0.50,
+        initial_soc: float = 0.10,
     ) -> None:
         if capacity_kwh <= 0:
             raise ValueError("Battery capacity must be positive.")

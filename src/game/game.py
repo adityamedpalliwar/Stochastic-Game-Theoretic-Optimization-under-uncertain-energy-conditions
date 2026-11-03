@@ -56,7 +56,7 @@ def create_default_batteries(
     discharge_efficiency: float = 0.95,
     min_soc: float = 0.10,
     max_soc: float = 0.90,
-    initial_soc: float = 0.50,
+    initial_soc: float = 0.0,
 ) -> Dict[str, BatteryStorage]:
     """Create independent BatteryStorage instances for each household.
 
@@ -321,7 +321,7 @@ def run_n_player_game(
     if eq_result.selected_equilibrium is not None:
         eq = eq_result.selected_equilibrium
         game_utilities   = eq.utilities
-        selected_actions = eq.action_profile
+        raw_actions      = eq.action_profile
         has_eq           = True
 
         # Extract price and demand-pressure at the selected equilibrium profile
@@ -331,18 +331,40 @@ def run_n_player_game(
         # Demand pressure from active trading pool post-battery
         trading_surpluses = [
             net_surpluses[i] for i, pid in enumerate(player_ids)
-            if selected_actions[pid] == "TRADE" and net_surpluses[i] > 0
+            if raw_actions[pid] in ("P2P_TRADE", "TRADE") and net_surpluses[i] > 0
         ]
         trading_deficits = [
             net_deficits[i] for i, pid in enumerate(player_ids)
-            if selected_actions[pid] == "TRADE" and net_deficits[i] > 0
+            if raw_actions[pid] in ("P2P_TRADE", "TRADE") and net_deficits[i] > 0
         ]
         ts_total = sum(trading_surpluses)
         td_total = sum(trading_deficits)
         eq_demand_pressure = td_total / (ts_total + 1e-9) if ts_total > 1e-9 else None
+
+        # Equilibrium traded energy
+        eq_traded_q = float(matrix.traded_quantities[eq_idx_tuple])
+
+        # Resolve explicit operational action for each household:
+        # 1. "SELF_SUFFICIENT": enough local energy (solar + battery) to meet demand, no need to buy from anyone
+        # 2. "P2P_TRADE": actively made a peer-to-peer trade with community members
+        # 3. "GRID_ONLY": buys/sells electricity directly from the grid
+        selected_actions = {}
+        for i, pid in enumerate(player_ids):
+            if net_surpluses[i] <= 1e-4 and net_deficits[i] <= 1e-4:
+                selected_actions[pid] = "SELF_SUFFICIENT"
+            elif eq_traded_q > 1e-4 and raw_actions[pid] in ("P2P_TRADE", "TRADE") and (
+                (net_surpluses[i] > 1e-4 and ts_total > 1e-4) or
+                (net_deficits[i] > 1e-4 and td_total > 1e-4)
+            ):
+                selected_actions[pid] = "P2P_TRADE"
+            else:
+                selected_actions[pid] = "GRID_ONLY"
     else:
         game_utilities      = baseline_utilities
-        selected_actions    = eq_result.baseline_profile
+        selected_actions    = {
+            pid: "SELF_SUFFICIENT" if net_surpluses[i] <= 1e-4 and net_deficits[i] <= 1e-4 else "GRID_ONLY"
+            for i, pid in enumerate(player_ids)
+        }
         has_eq              = False
         eq_p2p_price        = matrix.p2p_price_aud
         eq_demand_pressure  = None

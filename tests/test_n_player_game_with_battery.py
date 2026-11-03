@@ -68,7 +68,7 @@ def test_n_player_game_with_batteries_and_dynamic_pricing():
     assert result.has_equilibrium
     assert len(result.selected_actions) == 5
     for pid in pids:
-        assert result.selected_actions[pid] in ["TRADE", "GRID_ONLY"]
+        assert result.selected_actions[pid] in ["P2P_TRADE", "GRID_ONLY", "SELF_SUFFICIENT", "TRADE"]
 
     # Check that batteries performed charge/discharge
     assert result.battery_charged_kwh["H001"] > 0.0

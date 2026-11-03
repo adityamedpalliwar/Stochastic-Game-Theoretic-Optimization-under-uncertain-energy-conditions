@@ -152,9 +152,10 @@ def find_nash_equilibria_n_players(
                 traded_energy_kwh=traded_kwh,
             ))
 
-    # Baseline: everyone uses GRID_ONLY
+    # Baseline: everyone uses GRID_ONLY (or SELF_SUFFICIENT if self-sufficient)
     baseline_idx = tuple(
-        matrix.actions[k].index("GRID_ONLY") if "GRID_ONLY" in matrix.actions[k] else 0
+        matrix.actions[k].index("GRID_ONLY") if "GRID_ONLY" in matrix.actions[k]
+        else (matrix.actions[k].index("SELF_SUFFICIENT") if "SELF_SUFFICIENT" in matrix.actions[k] else 0)
         for k in range(N)
     )
     baseline_profile_names = {

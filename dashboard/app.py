@@ -13,7 +13,13 @@ from typing import Any, Dict, Optional, Tuple
 
 from flask import Flask, jsonify, render_template, request, Response, send_from_directory
 
-from dashboard.data_service import DashboardDataService, get_data_service
+try:
+    from dashboard.data_service import DashboardDataService, get_data_service
+except ModuleNotFoundError:
+    # When run directly as python dashboard/app.py, add project root to sys.path
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from dashboard.data_service import DashboardDataService, get_data_service
 
 logger = logging.getLogger(__name__)
 
@@ -188,7 +194,7 @@ def main() -> None:
     """CLI runner for Flask dashboard server."""
     parser = argparse.ArgumentParser(description="5-Household Stochastic Energy Trading Dashboard Server")
     parser.add_argument("--host", default="127.0.0.1", help="Host address to bind (default: 127.0.0.1)")
-    parser.add_argument("--port", type=int, default=5000, help="Port to bind (default: 5000)")
+    parser.add_argument("--port", type=int, default=5001, help="Port to bind (default: 5000)")
     parser.add_argument("--debug", action="store_true", help="Enable Flask debug mode")
     args = parser.parse_args()
 

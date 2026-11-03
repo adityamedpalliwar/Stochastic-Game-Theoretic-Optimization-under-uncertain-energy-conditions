@@ -96,7 +96,7 @@ class DynamicPricingModel:
         Multiplier on demand pressure before clamping. Default 1.0.
     """
 
-    max_pressure: float = 2.0
+    max_pressure: float = 1.0
     sensitivity: float = 1.0
     clamp_ceiling: bool = False
 
@@ -113,7 +113,7 @@ class DynamicPricingModel:
 
         pressure = _demand_pressure(total_trading_surplus_kwh, total_trading_deficit_kwh)
         if self.clamp_ceiling:
-            t = _clamp(self.sensitivity * pressure / self.max_pressure, 0.0, 1.0)
+            t =  self.sensitivity * pressure / self.max_pressure
             price = grid_export_credit_aud + t * (grid_import_price_aud - grid_export_credit_aud)
             return _clamp(price, grid_export_credit_aud, grid_import_price_aud)
         else:
