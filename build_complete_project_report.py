@@ -87,21 +87,31 @@ def build_word_report():
     # Paragraph 2 & 3: empty spacing with section break
     doc.paragraphs[2].text = ""
 
-    # Paragraph 4: Author block
-    p_author = doc.paragraphs[4]
-    p_author.text = (
-        "Aditya Medpalliwar\n"
-        "Department of Electrical Engineering\n"
-        "Sardar Vallabhbhai National Institute of Technology (SVNIT)\n"
-        "Surat, Gujarat, India\n"
-        "adityamedpalliwar@gmail.com"
-    )
-    p_author.style = 'Author'
-    p_author.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    # Paragraphs 4, 5, 6: 3-Author block in 3 columns
+    authors_info = [
+        ("Aditya", "u24mc003@amhd.svnit.ac.in"),
+        ("Heet", "u24mc019@amhd.svnit.ac.in"),
+        ("Dimpal", "u24mc020@amhd.svnit.ac.in"),
+    ]
+    for i, (name, email) in enumerate(authors_info):
+        p = doc.paragraphs[4 + i]
+        p.text = (
+            f"{name}\n"
+            f"Department of Mathematics\n"
+            f"Sardar Vallabhbhai National Institute of Technology (SVNIT)\n"
+            f"Surat, Gujarat, India\n"
+            f"{email}"
+        )
+        p.style = 'Author'
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        if i < 2:
+            r = p.add_run()
+            br = OxmlElement('w:br')
+            br.set(qn('w:type'), 'column')
+            r._r.append(br)
 
-    # Clear authors in paragraphs 5, 6, 7
-    for idx in (5, 6, 7):
-        doc.paragraphs[idx].text = ""
+    # Clear paragraph 7
+    doc.paragraphs[7].text = ""
 
     # Paragraph 8 and 9 contain the transitions to Section 3 (2 columns)
     doc.paragraphs[8].text = ""
@@ -264,9 +274,11 @@ def build_word_report():
         "empirical cross-household correlations across 1,000 independent 24-hour days (24,000 sequential hourly market rounds) drawn from "
         "real-world Ausgrid panel data. Four operational counterfactuals are evaluated: pure grid baseline, solar self-consumption, "
         "battery self-consumption without P2P, and the full proposed game-theoretic model. Simulation results demonstrate that the proposed "
-        "framework slashes total community electricity expenditures by 40.07% ($10,559.67 AUD saved over 1,000 days). Factor decomposition "
-        "confirms that while solar (52.3%) and battery storage (42.6%) furnish substantial baseline arbitrage, P2P software coordination delivers "
-        "an additional $540.34 AUD (5.1% of community savings, and up to 19.1% for high-demand consumers) with zero marginal hardware expenditure. "
+        "framework slashes total community electricity expenditures by 40.07%, saving an average of $10.56 AUD/day across the microgrid "
+        "(reducing daily community energy expenditure from $26.36/day under pure grid reliance down to $15.80/day under coordinated trading). "
+        "Factor decomposition confirms that while solar self-consumption ($5.52 AUD/day, 52.3%) and battery storage ($4.50 AUD/day, 42.6%) "
+        "furnish substantial baseline arbitrage, P2P software coordination delivers an additional $0.54 AUD/day (5.1% of community savings, "
+        "and up to 19.1% for high-demand consumers) with zero marginal hardware expenditure. "
         "Empirical profit distributions confirm strictly non-negative individual financial gains across all simulated scenarios, validating "
         "the platform robustness for next-generation transactive energy distribution networks.",
         style='Abstract',
@@ -464,27 +476,28 @@ def build_word_report():
 
     insert_heading_2("B. Factor Decomposition of Community Profit")
     insert_p_before_89(
-        "Total community savings reach $10,559.67 AUD over 1,000 simulated days ($10.56 AUD/day). "
-        "Table III breaks down the cumulative contribution of solar self-consumption, battery storage arbitrage, and P2P trading coordination."
+        "Total community savings average $10.56 AUD/day ($10,559.67 AUD cumulatively across 1,000 simulated days). "
+        "Table III breaks down the average daily contribution of solar self-consumption, battery storage arbitrage, and P2P trading coordination."
     )
 
     # TABLE III
     t3_data = [
-        ["Participant", "Total Savings (1000d)", "Solar Dividend", "Battery Dividend", "P2P Game Dividend", "P2P Share (%)"],
-        ["H001", "$3,285.63", "$1,925.69", "$1,238.88", "$121.06", "3.7%"],
-        ["H002", "$1,216.78", "$634.92", "$573.14", "$8.73", "0.7%"],
-        ["H003", "$1,633.30", "$832.26", "$790.27", "$10.77", "0.7%"],
-        ["H004", "$1,898.61", "$800.86", "$735.10", "$362.65", "19.1%"],
-        ["H005", "$2,525.34", "$1,329.14", "$1,159.08", "$37.13", "1.5%"],
-        ["COMMUNITY TOTAL", "$10,559.67", "$5,522.87 (52.3%)", "$4,496.47 (42.6%)", "$540.34 (5.1%)", "5.1%"],
+        ["Participant", "Daily Savings", "Solar Div.", "Battery Div.", "P2P Div.", "P2P Share"],
+        ["H001", "$3.29/day", "$1.93/day", "$1.24/day", "$0.12/day", "3.7%"],
+        ["H002", "$1.22/day", "$0.63/day", "$0.57/day", "$0.01/day", "0.7%"],
+        ["H003", "$1.63/day", "$0.83/day", "$0.79/day", "$0.01/day", "0.7%"],
+        ["H004", "$1.90/day", "$0.80/day", "$0.74/day", "$0.36/day", "19.1%"],
+        ["H005", "$2.53/day", "$1.33/day", "$1.16/day", "$0.04/day", "1.5%"],
+        ["COMMUNITY TOTAL", "$10.56/day", "$5.52 (52.3%)", "$4.50 (42.6%)", "$0.54 (5.1%)", "5.1%"],
     ]
     t3_widths = [Inches(0.65), Inches(0.55), Inches(0.55), Inches(0.55), Inches(0.55), Inches(0.45)]
-    insert_table(t3_data, t3_widths, "TABLE III: Factor Decomposition of Total Savings Over 1,000 Days (AUD)")
+    insert_table(t3_data, t3_widths, "TABLE III: Factor Decomposition of Average Daily Savings (AUD/day)")
 
     insert_p_before_89(
-        "Crucially, for the heavy consumer H004, P2P market coordination provides $362.65 AUD—accounting for 19.1% of its entire financial savings. "
-        "Because H004 lacks sufficient rooftop PV capacity, access to neighbors' surplus energy via dynamic P2P trading serves as its most impactful "
-        "optimization mechanism. Meanwhile, community-wide, solar self-consumption provides 52.3% and battery storage provides 42.6% of savings."
+        "Crucially, for the heavy consumer H004, P2P market coordination provides an average of $0.36 AUD/day ($362.65 AUD over 1,000 days)—"
+        "accounting for 19.1% of its entire financial savings. Because H004 lacks sufficient rooftop PV capacity, access to neighbors' surplus energy "
+        "via dynamic P2P trading serves as its most impactful optimization mechanism. Meanwhile, community-wide, solar self-consumption provides "
+        "$5.52/day (52.3%) and battery storage provides $4.50/day (42.6%) of savings."
     )
 
     # FIG 4: Factor Decomposition
@@ -532,9 +545,10 @@ def build_word_report():
         "This paper presented an integrated stochastic game-theoretic optimization framework for peer-to-peer energy trading in residential "
         "microgrids with distributed battery storage. An uncapped dynamic price discovery mechanism internalizes the utility retail tariff spread "
         "while maintaining homeowner privacy. Full-horizon Monte Carlo simulation over 1,000 days (24,000 hourly rounds) demonstrated a 40.07% "
-        "total electricity expenditure reduction, capturing $10,559.67 AUD in community savings. Factor decomposition proved that while solar (52.3%) "
-        "and battery storage (42.6%) provide baseline savings, P2P trading delivers an extra $540.34 AUD (5.1%) pure software dividend with zero extra "
-        "hardware cost, providing up to 19.1% of savings for heavy consumers. Empirical distributions confirm zero downside risk for all participants."
+        "total electricity expenditure reduction, capturing an average of $10.56 AUD/day in community savings ($10,559.67 AUD across the 1,000-day evaluation horizon). "
+        "Factor decomposition proved that while solar self-consumption ($5.52/day, 52.3%) and battery storage ($4.50/day, 42.6%) provide baseline savings, "
+        "P2P trading delivers an extra $0.54 AUD/day (5.1% software dividend, totaling $540.34 AUD) with zero extra hardware cost, providing up to 19.1% of savings "
+        "for heavy consumers. Empirical distributions confirm zero downside risk for all participants."
     )
     insert_p_before_89(
         "Future work will extend the framework to incorporate distribution network voltage constraints, reactive power compensation, "
@@ -544,9 +558,9 @@ def build_word_report():
     # ACKNOWLEDGMENT
     insert_heading_1("ACKNOWLEDGMENT")
     insert_p_before_89(
-        "The author expresses sincere gratitude to the project supervisor, faculty members, and the Department of Electrical Engineering, "
-        "Sardar Vallabhbhai National Institute of Technology (SVNIT), Surat, for their constructive guidance, continuous mentorship, "
-        "and valuable academic feedback throughout the development of this research project."
+        "The authors express their sincere gratitude to their project supervisor, faculty members, and the Department of Mathematics, "
+        "Sardar Vallabhbhai National Institute of Technology (SVNIT), Surat, for their constructive guidance, research facilities, "
+        "continuous mentorship, and valuable academic feedback throughout the development and execution of this research project."
     )
 
     # REFERENCES
