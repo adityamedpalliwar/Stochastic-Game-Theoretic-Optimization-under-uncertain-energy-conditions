@@ -56,7 +56,7 @@ def create_default_batteries(
     discharge_efficiency: float = 0.95,
     min_soc: float = 0.10,
     max_soc: float = 0.90,
-    initial_soc: float = 0.0,
+    initial_soc: float = 0.50,
 ) -> Dict[str, BatteryStorage]:
     """Create independent BatteryStorage instances for each household.
 

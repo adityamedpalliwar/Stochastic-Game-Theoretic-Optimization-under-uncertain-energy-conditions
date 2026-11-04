@@ -96,7 +96,7 @@ class DynamicPricingModel:
         Multiplier on demand pressure before clamping. Default 1.0.
     """
 
-    max_pressure: float = 1.0
+    max_pressure: float = 2.0
     sensitivity: float = 1.0
     clamp_ceiling: bool = False
 
