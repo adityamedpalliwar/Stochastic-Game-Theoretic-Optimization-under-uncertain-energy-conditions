@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Offline Math Test</title>
+<style>
+  body {
+    font-family: "Times New Roman", Times, Georgia, serif;
+    padding: 40px;
+    background: #f8fafc;
+    color: #0f172a;
+  }
+  .equation-card {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 16px 24px;
+    margin: 16px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    font-size: 11pt;
+  }
+  .math-formula {
+    flex-grow: 1;
+    text-align: center;
+    font-style: italic;
+    letter-spacing: 0.3px;
+  }
+  .math-formula var {
+    font-style: italic;
+    font-family: "Cambria Math", "Times New Roman", serif;
+  }
+  .math-formula .roman {
+    font-style: normal;
+    font-family: "Times New Roman", serif;
+  }
+  .math-formula sub, .math-formula sup {
+    font-size: 75%;
+    font-style: normal;
+  }
+  .frac {
+    display: inline-flex;
+    flex-direction: column;
+    vertical-align: middle;
+    text-align: center;
+    padding: 0 4px;
+    font-size: 95%;
+  }
+  .frac > .num {
+    border-bottom: 1.2px solid #0f172a;
+    padding-bottom: 1px;
+  }
+  .frac > .den {
+    padding-top: 1px;
+  }
+  .eq-num {
+    font-weight: bold;
+    font-style: normal;
+    color: #475569;
+    margin-left: 20px;
+    font-size: 10.5pt;
+  }
+</style>
+</head>
+<body>
+  <h2>Pure CSS / HTML Mathematical Typography (100% Offline & Reliable)</h2>
+
+  <!-- Eq 1 -->
+  <div class="equation-card">
+    <div class="math-formula">
+      <var>S</var><sub><var>i</var>,<var>t</var></sub><sup>raw</sup> = <span class="roman">max</span>(0, <var>G</var><sub><var>i</var>,<var>t</var></sub> − <var>D</var><sub><var>i</var>,<var>t</var></sub>), &emsp;&emsp;
+      <var>D</var><sub><var>i</var>,<var>t</var></sub><sup>raw</sup> = <span class="roman">max</span>(0, <var>D</var><sub><var>i</var>,<var>t</var></sub> − <var>G</var><sub><var>i</var>,<var>t</var></sub>)
+    </div>
+    <div class="eq-num">(1)</div>
+  </div>
+
+  <!-- Eq 2 -->
+  <div class="equation-card">
+    <div class="math-formula">
+      <var>P</var><sub>ch,<var>i</var>,<var>t</var></sub> = <span class="roman">min</span> &Biggl(
+        <var>S</var><sub><var>i</var>,<var>t</var></sub><sup>raw</sup>, &ensp;
+        <var>P</var><sub>ch</sub><sup>max</sup>, &ensp;
+        <span class="frac">
+          <span class="num">[<var>SOC</var><sub>max</sub> − <var>SOC</var><sub><var>i</var>,<var>t</var></sub>] &middot; <var>E</var><sub>cap</sub></span>
+          <span class="den"><var>&eta;</var><sub>ch</sub> &middot; &Delta;<var>t</var></span>
+        </span>
+      &Biggr)
+    </div>
+    <div class="eq-num">(2)</div>
+  </div>
+
+  <!-- Eq 3 -->
+  <div class="equation-card">
+    <div class="math-formula">
+      <var>S</var><sub><var>i</var>,<var>t</var></sub><sup>net</sup> = <span class="roman">max</span>(0, &ensp; <var>S</var><sub><var>i</var>,<var>t</var></sub><sup>raw</sup> − <var>P</var><sub>ch,<var>i</var>,<var>t</var></sub>)
+    </div>
+    <div class="eq-num">(3)</div>
+  </div>
+
+  <!-- Eq 4 -->
+  <div class="equation-card">
+    <div class="math-formula">
+      <var>P</var><sub>dis,<var>i</var>,<var>t</var></sub> = <span class="roman">min</span> &Biggl(
+        <var>D</var><sub><var>i</var>,<var>t</var></sub><sup>raw</sup>, &ensp;
+        <var>P</var><sub>dis</sub><sup>max</sup>, &ensp;
+        <span class="frac">
+          <span class="num">[<var>SOC</var><sub><var>i</var>,<var>t</var></sub> − <var>SOC</var><sub>min</sub>] &middot; <var>E</var><sub>cap</sub> &middot; <var>&eta;</var><sub>dis</sub></span>
+          <span class="den">&Delta;<var>t</var></span>
+        </span>
+      &Biggr)
+    </div>
+    <div class="eq-num">(4)</div>
+  </div>
+
+  <!-- Eq 5 -->
+  <div class="equation-card">
+    <div class="math-formula">
+      <var>D</var><sub><var>i</var>,<var>t</var></sub><sup>net</sup> = <span class="roman">max</span>(0, &ensp; <var>D</var><sub><var>i</var>,<var>t</var></sub><sup>raw</sup> − <var>P</var><sub>dis,<var>i</var>,<var>t</var></sub>)
+    </div>
+    <div class="eq-num">(5)</div>
+  </div>
+
+  <!-- Eq 6 -->
+  <div class="equation-card">
+    <div class="math-formula">
+      <var>SOC</var><sub><var>i</var>,<var>t</var>+1</sub> = <var>SOC</var><sub><var>i</var>,<var>t</var></sub> + 
+      <span class="frac">
+        <span class="num"><var>P</var><sub>ch,<var>i</var>,<var>t</var></sub> &middot; <var>&eta;</var><sub>ch</sub> &ensp;&minus;&ensp; <var>P</var><sub>dis,<var>i</var>,<var>t</var></sub> / <var>&eta;</var><sub>dis</sub></span>
+        <span class="den"><var>E</var><sub>cap</sub></span>
+      </span>
+    </div>
+    <div class="eq-num">(6)</div>
+  </div>
+
+  <!-- Eq 7 -->
+  <div class="equation-card">
+    <div class="math-formula">
+      <var>S</var><sub>pool,<var>t</var></sub> = <span class="roman" style="font-size:120%">&sum;</span><sub><var>i</var>=1</sub><sup><var>N</var></sup> <var>S</var><sub><var>i</var>,<var>t</var></sub><sup>net</sup>, &emsp;&emsp;
+      <var>D</var><sub>pool,<var>t</var></sub> = <span class="roman" style="font-size:120%">&sum;</span><sub><var>i</var>=1</sub><sup><var>N</var></sup> <var>D</var><sub><var>i</var>,<var>t</var></sub><sup>net</sup>
+    </div>
+    <div class="eq-num">(7)</div>
+  </div>
+
+  <!-- Eq 8 -->
+  <div class="equation-card">
+    <div class="math-formula">
+      <var>&lambda;</var><sub><var>t</var></sub> = 
+      <span class="frac">
+        <span class="num"><var>D</var><sub>pool,<var>t</var></sub></span>
+        <span class="den"><var>S</var><sub>pool,<var>t</var></sub> + <var>&epsilon;</var></span>
+      </span>
+    </div>
+    <div class="eq-num">(8)</div>
+  </div>
+
+  <!-- Eq 9 -->
+  <div class="equation-card">
+    <div class="math-formula">
+      <var>P</var><sub>P2P,<var>t</var></sub> = <var>P</var><sub>export</sub> + 
+      &Biggl(
+        <span class="frac">
+          <span class="num"><var>&lambda;</var><sub><var>t</var></sub></span>
+          <span class="den"><var>&lambda;</var><sub>max</sub></span>
+        </span>
+      &Biggr) &middot; (<var>P</var><sub>import</sub> &minus; <var>P</var><sub>export</sub>)
+    </div>
+    <div class="eq-num">(9)</div>
+  </div>
+
+  <!-- Eq 10 -->
+  <div class="equation-card">
+    <div class="math-formula">
+      <span class="roman">Cost</span><sub><var>i</var>,<var>t</var></sub><sup>P2P</sup> = 
+      <var>m</var><sub><var>i</var>,<var>t</var></sub> &middot; <var>P</var><sub>import</sub> &ensp;+&ensp;
+      <var>q</var><sub><var>i</var>,<var>t</var></sub><sup>buy</sup> &middot; <var>P</var><sub>P2P,<var>t</var></sub> &ensp;&minus;&ensp;
+      <var>q</var><sub><var>i</var>,<var>t</var></sub><sup>sell</sup> &middot; <var>P</var><sub>P2P,<var>t</var></sub> &ensp;&minus;&ensp;
+      <var>e</var><sub><var>i</var>,<var>t</var></sub> &middot; <var>P</var><sub>export</sub>
+    </div>
+    <div class="eq-num">(10)</div>
+  </div>
+</body>
+</html>
+

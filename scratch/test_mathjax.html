@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MathJax Test</title>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  chtml: {
+    scale: 1.05
+  }
+};
+</script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<style>
+  body { font-family: "Times New Roman", serif; padding: 40px; background: #f8fafc; }
+  .equation {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 14px 20px;
+    margin: 14px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .eq-math { flex-grow: 1; text-align: center; }
+  .eq-num { font-weight: bold; color: #475569; margin-left: 20px; }
+</style>
+</head>
+<body>
+  <h2>Equation Test</h2>
+  <div class="equation">
+    <div class="eq-math">$$S_{i,t}^{\text{raw}} = \max(0, \, G_{i,t} - D_{i,t}), \qquad D_{i,t}^{\text{raw}} = \max(0, \, D_{i,t} - G_{i,t})$$</div>
+    <div class="eq-num">(1)</div>
+  </div>
+  <div class="equation">
+    <div class="eq-math">$$P_{\text{ch},i,t} = \min \left( S_{i,t}^{\text{raw}}, \; P_{\text{ch}}^{\max}, \; \frac{[SOC_{\max} - SOC_{i,t}] \cdot E_{\text{cap}}}{\eta_{\text{ch}} \cdot \Delta t} \right)$$</div>
+    <div class="eq-num">(2)</div>
+  </div>
+  <div class="equation">
+    <div class="eq-math">$$S_{i,t}^{\text{net}} = \max(0, \; S_{i,t}^{\text{raw}} - P_{\text{ch},i,t})$$</div>
+    <div class="eq-num">(3)</div>
+  </div>
+  <div class="equation">
+    <div class="eq-math">$$P_{\text{dis},i,t} = \min \left( D_{i,t}^{\text{raw}}, \; P_{\text{dis}}^{\max}, \; \frac{[SOC_{i,t} - SOC_{\min}] \cdot E_{\text{cap}} \cdot \eta_{\text{dis}}}{\Delta t} \right)$$</div>
+    <div class="eq-num">(4)</div>
+  </div>
+  <div class="equation">
+    <div class="eq-math">$$D_{i,t}^{\text{net}} = \max(0, \; D_{i,t}^{\text{raw}} - P_{\text{dis},i,t})$$</div>
+    <div class="eq-num">(5)</div>
+  </div>
+  <div class="equation">
+    <div class="eq-math">$$SOC_{i,t+1} = SOC_{i,t} + \frac{P_{\text{ch},i,t} \cdot \eta_{\text{ch}} - P_{\text{dis},i,t} / \eta_{\text{dis}}}{E_{\text{cap}}}$$</div>
+    <div class="eq-num">(6)</div>
+  </div>
+  <div class="equation">
+    <div class="eq-math">$$S_{\text{pool},t} = \sum_{i=1}^N S_{i,t}^{\text{net}}, \qquad D_{\text{pool},t} = \sum_{i=1}^N D_{i,t}^{\text{net}}$$</div>
+    <div class="eq-num">(7)</div>
+  </div>
+  <div class="equation">
+    <div class="eq-math">$$\lambda_t = \frac{D_{\text{pool},t}}{S_{\text{pool},t} + \epsilon}$$</div>
+    <div class="eq-num">(8)</div>
+  </div>
+  <div class="equation">
+    <div class="eq-math">$$P_{\text{P2P},t} = P_{\text{export}} + \left( \frac{\lambda_t}{\lambda_{\max}} \right) \cdot (P_{\text{import}} - P_{\text{export}})$$</div>
+    <div class="eq-num">(9)</div>
+  </div>
+  <div class="equation">
+    <div class="eq-math">$$\text{Cost}_{i,t}^{\text{P2P}} = m_{i,t} \cdot P_{\text{import}} + q_{i,t}^{\text{buy}} \cdot P_{\text{P2P},t} - q_{i,t}^{\text{sell}} \cdot P_{\text{P2P},t} - e_{i,t} \cdot P_{\text{export}}$$</div>
+    <div class="eq-num">(10)</div>
+  </div>
+</body>
+</html>
+
