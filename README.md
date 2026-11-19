@@ -77,19 +77,6 @@ Then open your browser and navigate to: **`http://localhost:5000`**
 
 ---
 
-## 📄 IEEE Academic Paper & Report Generation
-
-The project includes an automated IEEE-format publication generator and interactive report:
-
-| Format | File / Command | Description |
-| :--- | :--- | :--- |
-| **Interactive HTML** | `reports/ieee_paper_revised.html` | Two-column IEEE format with embedded high-resolution plots. Open in any browser. |
-| **Microsoft Word (DOCX)** | `python reports/export_docx.py` | Generates `reports/ieee_paper_revised.docx` with two-column text and full-width figures (6.85 in). |
-| **PDF Export (Headless)** | `python reports/export_pdf.py` | Generates `reports/ieee_paper_revised.pdf` via Chrome / Edge headless rendering. |
-| **DOCX + PDF in One Step** | `python reports/export_docx.py --pdf` | Generates both DOCX and PDF simultaneously. |
-
----
-
 ## 📊 Four Operational Counterfactual Modes
 
 To rigorously evaluate the system, the platform compares 4 distinct operating regimes:
