@@ -81,9 +81,9 @@ Then open your browser and navigate to: **`http://localhost:5000`**
 
 To rigorously evaluate the system, the platform compares 4 distinct operating regimes:
 
-1. **Mode 1: Pure Grid Baseline**: 100% of demand imported from the utility grid at `$0.30/\text{kWh}$` (no solar, no batteries).
+1. **Mode 1: Pure Grid Baseline**: 100% of demand imported from the utility grid at `$0.30 kWh` (no solar, no batteries).
 
-2. **Mode 2: Solar + Grid-Only**: Solar panels installed for self-consumption; all deficits imported at `$0.30/\text{kWh}$`, surpluses exported at `$0.08/\text{kWh}$` (no battery, no P2P).
+2. **Mode 2: Solar + Grid-Only**: Solar panels installed for self-consumption; all deficits imported at `$0.30 kWh`, surpluses exported at `$0.08 kwh` (no battery, no P2P).
 
 3. **Mode 3: Battery + Grid-Only**: Solar + 5.0 kWh battery per home for local storage arbitrage, but strictly NO P2P trading allowed with neighbors.
 
